@@ -9,3 +9,10 @@ public class LogStorageUnitApp {
         serverThread.join();
     }
 }
+
+/*
+READ <epoch> <addr>
+WRITE <epoch> <addr> <c>
+DELETE <addr>
+SEAL <epoch>
+ */

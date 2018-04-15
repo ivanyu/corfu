@@ -2,6 +2,7 @@ package corfu.logstorageunit;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
@@ -26,12 +27,30 @@ class LogStorageUnitServer extends Thread {
                 final Socket socket = ss.accept();
 
                 try (final InputStream inpStream = socket.getInputStream();
-                     final Scanner scanner = new Scanner(inpStream)) {
+                     final Scanner scanner = new Scanner(inpStream);
+                     final OutputStream outputStream = socket.getOutputStream()) {
 
-                    System.out.println(scanner.nextLine());
+                    final String inputLine = scanner.nextLine();
+                    System.out.println(inputLine);
+                    try {
+                        final Command command = CommandParser.parse(inputLine);
+                        outputStream.write("ack".getBytes());
+                        outputStream.flush();
+                    } catch (final UnknownCommand e) {
+                        outputStream.write("unknown_command".getBytes());
+                        outputStream.flush();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        socket.close();
+                        System.out.println("Socket shut down");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
 
-                socket.close();
             }
         } catch (IOException e) {
             e.printStackTrace();
