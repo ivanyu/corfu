@@ -8,7 +8,7 @@ import java.io.OutputStream;
 import java.util.Scanner;
 
 public class AcceptWriteCommandTest extends WithServerConnection {
-    private static final String UNKNOWN_COMMAND = "unknown_command";
+    private static final String INVALID_COMMAND = "invalid_command";
 
     @Test
     public void acceptsWrite() throws Exception {
@@ -19,7 +19,7 @@ public class AcceptWriteCommandTest extends WithServerConnection {
             os.write("WRITE 42 1234 abc\n".getBytes());
 
             final String response = scanner.nextLine();
-            Assert.assertNotEquals(UNKNOWN_COMMAND, response);
+            Assert.assertNotEquals(INVALID_COMMAND, response);
         }
     }
 }

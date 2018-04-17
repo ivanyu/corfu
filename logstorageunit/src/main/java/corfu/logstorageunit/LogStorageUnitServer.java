@@ -36,8 +36,8 @@ class LogStorageUnitServer extends Thread {
                         final Command command = CommandParser.parse(inputLine);
                         outputStream.write("ack".getBytes());
                         outputStream.flush();
-                    } catch (final UnknownCommand e) {
-                        outputStream.write("unknown_command".getBytes());
+                    } catch (final InvalidCommandException e) {
+                        outputStream.write("invalid_command".getBytes());
                         outputStream.flush();
                     }
                 } catch (IOException e) {

@@ -8,7 +8,7 @@ import java.io.OutputStream;
 import java.util.Scanner;
 
 public class AcceptDeleteCommandTest extends WithServerConnection {
-    private static final String UNKNOWN_COMMAND = "unknown_command";
+    private static final String INVALID_COMMAND = "invalid_command";
 
     @Test
     public void acceptsDelete() throws Exception {
@@ -19,7 +19,7 @@ public class AcceptDeleteCommandTest extends WithServerConnection {
             os.write("DELETE 1234\n".getBytes());
 
             final String response = scanner.nextLine();
-            Assert.assertNotEquals(UNKNOWN_COMMAND, response);
+            Assert.assertNotEquals(INVALID_COMMAND, response);
         }
     }
 }

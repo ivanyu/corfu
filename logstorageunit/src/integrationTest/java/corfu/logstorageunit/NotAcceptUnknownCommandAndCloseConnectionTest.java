@@ -8,7 +8,7 @@ import java.io.OutputStream;
 import java.util.Scanner;
 
 public class NotAcceptUnknownCommandAndCloseConnectionTest extends WithServerConnection {
-    private static final String UNKNOWN_COMMAND = "unknown_command";
+    private static final String INVALID_COMMAND = "invalid_command";
 
     @Test(timeout = 300)
     public void acceptsWrite() throws Exception {
@@ -19,7 +19,7 @@ public class NotAcceptUnknownCommandAndCloseConnectionTest extends WithServerCon
             os.write("UNKNOWN 42 1234 abc\n".getBytes());
 
             final String response = scanner.nextLine();
-            Assert.assertEquals(UNKNOWN_COMMAND, response);
+            Assert.assertEquals(INVALID_COMMAND, response);
 
             do {
                 Thread.sleep(10);
