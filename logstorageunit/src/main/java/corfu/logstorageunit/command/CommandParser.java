@@ -1,9 +1,9 @@
-package corfu.logstorageunit;
+package corfu.logstorageunit.command;
 
-class CommandParser {
+public class CommandParser {
     private static InvalidCommandException INVALID_COMMAND_EXCEPTION = new InvalidCommandException();
 
-    static Command parse(String commandLine) throws InvalidCommandException {
+    public static Command parse(String commandLine) throws InvalidCommandException {
         final String[] commandParts = getCommandLineParts(commandLine);
 
         if (commandParts.length < 1) {

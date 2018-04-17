@@ -1,4 +1,4 @@
-package corfu.logstorageunit;
+package corfu.logstorageunit.command;
 
 import java.util.Objects;
 

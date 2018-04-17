@@ -1,9 +1,9 @@
-package corfu.logstorageunit;
+package corfu.logstorageunit.command;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-public class CommandParserTest {
+public class CommandParserReadCommandTest {
     @Test
     public void parseCorrectReadCommand() throws Exception {
         final ReadCommand expected = new ReadCommand(42, 1234);

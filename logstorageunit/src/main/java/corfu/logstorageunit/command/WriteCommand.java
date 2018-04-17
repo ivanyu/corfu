@@ -1,4 +1,4 @@
-package corfu.logstorageunit;
+package corfu.logstorageunit.command;
 
 class WriteCommand implements Command {
 }
