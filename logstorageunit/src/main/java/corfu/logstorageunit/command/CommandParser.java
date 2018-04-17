@@ -17,7 +17,7 @@ public class CommandParser {
             case "WRITE":
                 return new WriteCommand();
             case "DELETE":
-                return new DeleteCommand();
+                return parseDeleteCommand(commandParts);
             case "SEAL":
                 return new SealCommand();
             default:
@@ -49,5 +49,20 @@ public class CommandParser {
         }
 
         return new ReadCommand(epoch, address);
+    }
+
+    private static DeleteCommand parseDeleteCommand(final String[] commandParts) throws InvalidCommandException {
+        if (commandParts.length != 2) {
+            throw INVALID_COMMAND_EXCEPTION;
+        }
+
+        long address = -1;
+        try {
+            address = Long.parseLong(commandParts[1]);
+        } catch (final NumberFormatException e) {
+            throw INVALID_COMMAND_EXCEPTION;
+        }
+
+        return new DeleteCommand(address);
     }
 }
