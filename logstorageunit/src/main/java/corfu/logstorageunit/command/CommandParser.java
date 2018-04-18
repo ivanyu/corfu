@@ -19,7 +19,7 @@ public class CommandParser {
             case "DELETE":
                 return parseDeleteCommand(commandParts);
             case "SEAL":
-                return new SealCommand();
+                return parseSealCommand(commandParts);
             default:
                 throw INVALID_COMMAND_EXCEPTION;
         }
@@ -64,5 +64,20 @@ public class CommandParser {
         }
 
         return new DeleteCommand(address);
+    }
+
+    private static SealCommand parseSealCommand(final String[] commandParts) throws InvalidCommandException {
+        if (commandParts.length != 2) {
+            throw INVALID_COMMAND_EXCEPTION;
+        }
+
+        int epoch = -1;
+        try {
+            epoch = Integer.parseInt(commandParts[1]);
+        } catch (final NumberFormatException e) {
+            throw INVALID_COMMAND_EXCEPTION;
+        }
+
+        return new SealCommand(epoch);
     }
 }
