@@ -12,7 +12,7 @@ public class LogStorageUnitApp {
 
 /*
 READ <epoch> <addr>
-WRITE <epoch> <addr> <c>
+WRITE <epoch> <addr> <length> <bytes>
 DELETE <addr>
 SEAL <epoch>
  */

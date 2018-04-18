@@ -1,9 +1,14 @@
 package corfu.logstorageunit.command;
 
+import java.io.InputStream;
+import java.util.Scanner;
+
 public class CommandParser {
     private static InvalidCommandException INVALID_COMMAND_EXCEPTION = new InvalidCommandException();
 
-    public static Command parse(String commandLine) throws InvalidCommandException {
+    public static Command parse(final InputStream inputStream) throws InvalidCommandException {
+        final Scanner scanner = new Scanner(inputStream);
+        final String commandLine = scanner.nextLine();
         final String[] commandParts = getCommandLineParts(commandLine);
 
         if (commandParts.length < 1) {
@@ -15,7 +20,7 @@ public class CommandParser {
             case "READ":
                 return parseReadCommand(commandParts);
             case "WRITE":
-                return new WriteCommand();
+                return null;
             case "DELETE":
                 return parseDeleteCommand(commandParts);
             case "SEAL":

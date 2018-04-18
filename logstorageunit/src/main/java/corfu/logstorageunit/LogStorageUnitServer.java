@@ -30,14 +30,10 @@ class LogStorageUnitServer extends Thread {
             while (true) {
                 final Socket socket = ss.accept();
 
-                try (final InputStream inpStream = socket.getInputStream();
-                     final Scanner scanner = new Scanner(inpStream);
+                try (final InputStream inputStream = socket.getInputStream();
                      final OutputStream outputStream = socket.getOutputStream()) {
-
-                    final String inputLine = scanner.nextLine();
-                    System.out.println(inputLine);
                     try {
-                        final Command command = CommandParser.parse(inputLine);
+                        final Command command = CommandParser.parse(inputStream);
                         outputStream.write("ack".getBytes());
                         outputStream.flush();
                     } catch (final InvalidCommandException e) {
