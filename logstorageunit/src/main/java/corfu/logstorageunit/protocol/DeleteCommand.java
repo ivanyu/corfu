@@ -40,4 +40,9 @@ final public class DeleteCommand implements Command {
                 .setAddress(address)
                 .build();
     }
+
+    @Override
+    public String toString() {
+        return "DeleteCommand(address=" + address + ")";
+    }
 }

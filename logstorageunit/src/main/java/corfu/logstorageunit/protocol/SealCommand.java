@@ -41,4 +41,9 @@ public final class SealCommand implements Command {
                 .setEpoch(epoch)
                 .build();
     }
+
+    @Override
+    public String toString() {
+        return "SealCommand(epoch=" + epoch + ")";
+    }
 }

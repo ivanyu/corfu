@@ -61,4 +61,9 @@ public final class WriteCommand implements Command {
                 .setContent(ByteString.copyFrom(content))
                 .build();
     }
+
+    @Override
+    public String toString() {
+        return "WriteCommand(epoch=" + epoch + ", address=" + address + ", content_len=" + content.length + ")";
+    }
 }

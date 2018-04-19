@@ -47,4 +47,9 @@ final public class ReadCommand implements Command {
                 .setAddress(address)
                 .build();
     }
+
+    @Override
+    public String toString() {
+        return "ReadCommand(epoch=" + epoch + ", address=" + address + ")";
+    }
 }
