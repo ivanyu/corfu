@@ -1,5 +1,6 @@
 package corfu.logstorageunit;
 
+import corfu.logstorageunit.protocol.WriteCommand;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -7,7 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Scanner;
 
-public class NotAcceptUnknownCommandAndCloseConnectionTest extends WithServerConnection {
+public class ReadAfterWriteCommandTest extends WithServerConnection {
     private static final String INVALID_COMMAND = "invalid_command";
 
     @Test(timeout = 300)
@@ -16,14 +17,11 @@ public class NotAcceptUnknownCommandAndCloseConnectionTest extends WithServerCon
              final InputStream is = clientSocket.getInputStream();
              final Scanner scanner = new Scanner(is)) {
 
-            os.write("UNKNOWN 42 1234 abc\n".getBytes());
+            new WriteCommand(42, 1234, "abc".getBytes()).toProtobuf()
+                    .writeDelimitedTo(os);
 
             final String response = scanner.nextLine();
-            Assert.assertEquals(INVALID_COMMAND, response);
-
-            do {
-                Thread.sleep(10);
-            } while (is.read() != -1);
+            Assert.assertNotEquals(INVALID_COMMAND, response);
         }
     }
 }
