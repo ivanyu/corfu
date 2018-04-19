@@ -1,14 +1,17 @@
-package corfu.logstorageunit.command;
+package corfu.logstorageunit.protocol;
+
+import com.google.protobuf.ByteString;
+import corfu.logstorageunit.Protocol;
 
 import java.util.Arrays;
 import java.util.Objects;
 
-class WriteCommand implements Command {
+public final class WriteCommand implements Command {
     private final int epoch;
     private final long address;
     private final byte[] content;
 
-    WriteCommand(int epoch, long address, byte[] content) {
+    public WriteCommand(int epoch, long address, byte[] content) {
         this.epoch = epoch;
         this.address = address;
         this.content = content;
@@ -47,5 +50,15 @@ class WriteCommand implements Command {
         int result = Objects.hash(epoch, address);
         result = 31 * result + Arrays.hashCode(content);
         return result;
+    }
+
+    @Override
+    public Protocol.ProtobufCommand toProtobuf() {
+        return Protocol.ProtobufCommand.newBuilder()
+                .setType(Protocol.ProtobufCommand.Type.WRITE)
+                .setEpoch(epoch)
+                .setAddress(address)
+                .setContent(ByteString.copyFrom(content))
+                .build();
     }
 }

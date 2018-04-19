@@ -1,11 +1,13 @@
-package corfu.logstorageunit.command;
+package corfu.logstorageunit.protocol;
+
+import corfu.logstorageunit.Protocol;
 
 import java.util.Objects;
 
-class SealCommand implements Command {
+public final class SealCommand implements Command {
     private final int epoch;
 
-    SealCommand(int epoch) {
+    public SealCommand(int epoch) {
         this.epoch = epoch;
     }
 
@@ -30,5 +32,13 @@ class SealCommand implements Command {
     @Override
     public int hashCode() {
         return Objects.hash(epoch);
+    }
+
+    @Override
+    public Protocol.ProtobufCommand toProtobuf() {
+        return Protocol.ProtobufCommand.newBuilder()
+                .setType(Protocol.ProtobufCommand.Type.SEAL)
+                .setEpoch(epoch)
+                .build();
     }
 }

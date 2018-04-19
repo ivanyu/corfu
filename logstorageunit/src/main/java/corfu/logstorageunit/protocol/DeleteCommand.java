@@ -1,11 +1,13 @@
-package corfu.logstorageunit.command;
+package corfu.logstorageunit.protocol;
+
+import corfu.logstorageunit.Protocol;
 
 import java.util.Objects;
 
-class DeleteCommand implements Command {
+final public class DeleteCommand implements Command {
     private final long address;
 
-    DeleteCommand(long address) {
+    public DeleteCommand(long address) {
         this.address = address;
     }
 
@@ -30,5 +32,12 @@ class DeleteCommand implements Command {
     @Override
     public int hashCode() {
         return Objects.hash(address);
+    }
+
+    public Protocol.ProtobufCommand toProtobuf() {
+        return Protocol.ProtobufCommand.newBuilder()
+                .setType(Protocol.ProtobufCommand.Type.DELETE)
+                .setAddress(address)
+                .build();
     }
 }

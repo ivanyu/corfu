@@ -1,5 +1,6 @@
 package corfu.logstorageunit;
 
+import corfu.logstorageunit.protocol.DeleteCommand;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -10,13 +11,14 @@ import java.util.Scanner;
 public class AcceptDeleteCommandTest extends WithServerConnection {
     private static final String INVALID_COMMAND = "invalid_command";
 
-    @Test
+    @Test(timeout = 300)
     public void acceptsDelete() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream();
              final Scanner scanner = new Scanner(is)) {
 
-            os.write("DELETE 1234\n".getBytes());
+            new DeleteCommand(1234).toProtobuf()
+                    .writeDelimitedTo(os);
 
             final String response = scanner.nextLine();
             Assert.assertNotEquals(INVALID_COMMAND, response);

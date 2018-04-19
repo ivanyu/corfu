@@ -1,12 +1,14 @@
-package corfu.logstorageunit.command;
+package corfu.logstorageunit.protocol;
+
+import corfu.logstorageunit.Protocol;
 
 import java.util.Objects;
 
-final class ReadCommand implements Command {
+final public class ReadCommand implements Command {
     private final int epoch;
     private final long address;
 
-    ReadCommand(int epoch, long address) {
+    public ReadCommand(int epoch, long address) {
         this.epoch = epoch;
         this.address = address;
     }
@@ -35,5 +37,14 @@ final class ReadCommand implements Command {
     @Override
     public int hashCode() {
         return Objects.hash(epoch, address);
+    }
+
+    @Override
+    public Protocol.ProtobufCommand toProtobuf() {
+        return Protocol.ProtobufCommand.newBuilder()
+                .setType(Protocol.ProtobufCommand.Type.READ)
+                .setEpoch(epoch)
+                .setAddress(address)
+                .build();
     }
 }

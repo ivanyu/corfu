@@ -1,5 +1,6 @@
 package corfu.logstorageunit;
 
+import corfu.logstorageunit.protocol.SealCommand;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -10,13 +11,14 @@ import java.util.Scanner;
 public class AcceptSealCommandTest extends WithServerConnection {
     private static final String INVALID_COMMAND = "invalid_command";
 
-    @Test
+    @Test(timeout = 300)
     public void acceptsSeal() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream();
              final Scanner scanner = new Scanner(is)) {
 
-            os.write("SEAL 42\n".getBytes());
+            new SealCommand(42).toProtobuf()
+                    .writeDelimitedTo(os);
 
             final String response = scanner.nextLine();
             Assert.assertNotEquals(INVALID_COMMAND, response);

@@ -1,15 +1,14 @@
 package corfu.logstorageunit;
 
-import corfu.logstorageunit.command.Command;
-import corfu.logstorageunit.command.CommandParser;
-import corfu.logstorageunit.command.InvalidCommandException;
+import corfu.logstorageunit.protocol.Command;
+import corfu.logstorageunit.protocol.CommandParser;
+import corfu.logstorageunit.protocol.InvalidCommandException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
 
 class LogStorageUnitServer extends Thread {
     private volatile boolean started = false;
@@ -27,8 +26,11 @@ class LogStorageUnitServer extends Thread {
             this.actualPort = ss.getLocalPort();
             this.started = true;
 
+            System.out.println("Server started");
+
             while (true) {
                 final Socket socket = ss.accept();
+                System.out.println("Client connected");
 
                 try (final InputStream inputStream = socket.getInputStream();
                      final OutputStream outputStream = socket.getOutputStream()) {
@@ -37,6 +39,7 @@ class LogStorageUnitServer extends Thread {
                         outputStream.write("ack".getBytes());
                         outputStream.flush();
                     } catch (final InvalidCommandException e) {
+                        e.printStackTrace();
                         outputStream.write("invalid_command".getBytes());
                         outputStream.flush();
                     }

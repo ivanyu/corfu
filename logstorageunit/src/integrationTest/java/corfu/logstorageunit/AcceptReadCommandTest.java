@@ -1,5 +1,6 @@
 package corfu.logstorageunit;
 
+import corfu.logstorageunit.protocol.ReadCommand;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -10,13 +11,15 @@ import java.util.Scanner;
 public class AcceptReadCommandTest extends WithServerConnection {
     private static final String INVALID_COMMAND = "invalid_command";
 
+//    @Test(timeout = 5300)
     @Test
     public void acceptsRead() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream();
              final Scanner scanner = new Scanner(is)) {
 
-            os.write("READ 42 1234\n".getBytes());
+            new ReadCommand(42, 1234).toProtobuf()
+                    .writeDelimitedTo(os);
 
             final String response = scanner.nextLine();
             Assert.assertNotEquals(INVALID_COMMAND, response);

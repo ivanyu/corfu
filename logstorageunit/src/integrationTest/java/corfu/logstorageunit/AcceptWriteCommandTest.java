@@ -1,5 +1,6 @@
 package corfu.logstorageunit;
 
+import corfu.logstorageunit.protocol.WriteCommand;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -10,13 +11,14 @@ import java.util.Scanner;
 public class AcceptWriteCommandTest extends WithServerConnection {
     private static final String INVALID_COMMAND = "invalid_command";
 
-    @Test
+    @Test(timeout = 300)
     public void acceptsWrite() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream();
              final Scanner scanner = new Scanner(is)) {
 
-            os.write("WRITE 42 1234 abc\n".getBytes());
+            new WriteCommand(42, 1234, "abc".getBytes()).toProtobuf()
+                    .writeDelimitedTo(os);
 
             final String response = scanner.nextLine();
             Assert.assertNotEquals(INVALID_COMMAND, response);

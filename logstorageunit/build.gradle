@@ -1,7 +1,9 @@
 plugins {
     id 'java'
     id 'application'
+    id 'idea'
     id 'org.unbroken-dome.test-sets' version '1.4.5'
+    id 'com.google.protobuf' version '0.8.5'
 }
 
 sourceCompatibility = 1.8
@@ -11,7 +13,16 @@ mainClassName = 'corfu.logstorageunit.LogStorageUnit'
 
 dependencies {
     compile 'com.google.guava:guava:23.0'
+    compile 'com.google.protobuf:protobuf-java:3.5.1'
     testCompile 'junit:junit:4.12'
+}
+
+protobuf {
+    // Configure the protoc executable
+    protoc {
+        // Download from repositories
+        artifact = 'com.google.protobuf:protoc:3.5.1-1'
+    }
 }
 
 testSets {
