@@ -3,6 +3,8 @@ package corfu.logstorageunit;
 import corfu.logstorageunit.protocol.Command;
 import corfu.logstorageunit.protocol.CommandParser;
 import corfu.logstorageunit.protocol.InvalidCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +13,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 class LogStorageUnitServer extends Thread {
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     private volatile boolean started = false;
     private final int port;
     private volatile int actualPort = -1;
@@ -26,20 +30,21 @@ class LogStorageUnitServer extends Thread {
             this.actualPort = ss.getLocalPort();
             this.started = true;
 
-            System.out.println("Server started");
+            logger.info("Server started");
 
             while (true) {
                 final Socket socket = ss.accept();
-                System.out.println("Client connected");
+                logger.info("Client connected");
 
                 try (final InputStream inputStream = socket.getInputStream();
                      final OutputStream outputStream = socket.getOutputStream()) {
                     try {
                         final Command command = CommandParser.parse(inputStream);
+                        logger.debug("Client sent command {}", command);
                         outputStream.write("ack".getBytes());
                         outputStream.flush();
                     } catch (final InvalidCommandException e) {
-                        e.printStackTrace();
+                        logger.warn("", e);
                         outputStream.write("invalid_command".getBytes());
                         outputStream.flush();
                     }
@@ -48,7 +53,7 @@ class LogStorageUnitServer extends Thread {
                 } finally {
                     try {
                         socket.close();
-                        System.out.println("Socket shut down");
+                        logger.info("Client socket shutdown");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
