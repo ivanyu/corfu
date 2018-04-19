@@ -9,6 +9,10 @@ public class CommandParser {
     public static Command parse(final InputStream inputStream) throws InvalidCommandException {
         final Protocol.ProtobufCommand commandPB = parseProtobuf(inputStream);
 
+        if (commandPB == null) {
+            return null;
+        }
+
         switch (commandPB.getType()) {
             case READ:
                 return new ReadCommand(commandPB.getEpoch(), commandPB.getAddress());

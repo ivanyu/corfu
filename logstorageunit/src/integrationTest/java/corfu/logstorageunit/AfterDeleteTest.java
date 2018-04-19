@@ -1,6 +1,7 @@
 package corfu.logstorageunit;
 
 import corfu.logstorageunit.Protocol.ProtobufCommandResult;
+import corfu.logstorageunit.protocol.DeleteCommand;
 import corfu.logstorageunit.protocol.ReadCommand;
 import corfu.logstorageunit.protocol.WriteCommand;
 import org.junit.Assert;
@@ -9,13 +10,13 @@ import org.junit.Test;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class ReadAfterWriteTest extends WithServerConnection {
+public class ReadAfterDeleteTest extends WithServerConnection {
     @Test(timeout = 300)
-    public void allowToReadAfterWrite() throws Exception {
+    public void notAllowToReadAfterDelete() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
 
-            new WriteCommand(0, 1234, "abc".getBytes()).toProtobuf()
+            new DeleteCommand(1234).toProtobuf()
                     .writeDelimitedTo(os);
             final ProtobufCommandResult writeCommandResult =
                     ProtobufCommandResult.parseDelimitedFrom(is);

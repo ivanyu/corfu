@@ -2,6 +2,7 @@ package corfu.logstorageunit;
 
 import corfu.logstorageunit.protocol.ReadCommand;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -11,8 +12,8 @@ import java.util.Scanner;
 public class AcceptReadCommandTest extends WithServerConnection {
     private static final String INVALID_COMMAND = "invalid_command";
 
-//    @Test(timeout = 5300)
-    @Test
+    @Ignore
+    @Test(timeout = 5300)
     public void acceptsRead() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream();
