@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -26,6 +27,7 @@ final class LogStorageUnitServer extends Thread {
         this.port = port;
     }
 
+    private int serverEpoch = 0;
     private HashMap<Long, Long> addressMap = new HashMap<>();
     private HashSet<Long> deletedAddresses = new HashSet<>();
     private ArrayList<byte[]> flash = new ArrayList<>();
@@ -101,46 +103,60 @@ final class LogStorageUnitServer extends Thread {
             return processReadCommand((ReadCommand) command);
         } else if (command instanceof DeleteCommand) {
             return processDeleteCommand((DeleteCommand) command);
+        } else if (command instanceof SealCommand) {
+            return processSealCommand((SealCommand) command);
         }
         assert false;
         return null;
     }
 
-    private ProtobufCommandResult processWriteCommand(final WriteCommand writeCommand) {
-        if (deletedAddresses.contains(writeCommand.getAddress())) {
+    private ProtobufCommandResult processWriteCommand(final WriteCommand command) {
+        if (serverEpoch > command.getEpoch()) {
+            return ProtobufCommandResult.newBuilder()
+                    .setType(ProtobufCommandResult.Type.ERR_SEALED)
+                    .build();
+        }
+
+        if (deletedAddresses.contains(command.getAddress())) {
             return ProtobufCommandResult.newBuilder()
                     .setType(ProtobufCommandResult.Type.ERR_DELETED)
                     .build();
         }
 
-        if (addressMap.containsKey(writeCommand.getAddress())) {
+        if (addressMap.containsKey(command.getAddress())) {
             return ProtobufCommandResult.newBuilder()
                     .setType(ProtobufCommandResult.Type.ERR_WRITTEN)
                     .build();
         }
 
-        addressMap.put(writeCommand.getAddress(), (long) flash.size());
-        flash.add(writeCommand.getContent());
+        addressMap.put(command.getAddress(), (long) flash.size());
+        flash.add(command.getContent());
 
         return ProtobufCommandResult.newBuilder()
                 .setType(ProtobufCommandResult.Type.ACK)
                 .build();
     }
 
-    private ProtobufCommandResult processReadCommand(final ReadCommand readCommand) {
-        if (deletedAddresses.contains(readCommand.getAddress())) {
+    private ProtobufCommandResult processReadCommand(final ReadCommand command) {
+        if (serverEpoch > command.getEpoch()) {
+            return ProtobufCommandResult.newBuilder()
+                    .setType(ProtobufCommandResult.Type.ERR_SEALED)
+                    .build();
+        }
+
+        if (deletedAddresses.contains(command.getAddress())) {
             return ProtobufCommandResult.newBuilder()
                     .setType(ProtobufCommandResult.Type.ERR_DELETED)
                     .build();
         }
 
-        if (!addressMap.containsKey(readCommand.getAddress())) {
+        if (!addressMap.containsKey(command.getAddress())) {
             return ProtobufCommandResult.newBuilder()
                     .setType(ProtobufCommandResult.Type.ERR_UNWRITTEN)
                     .build();
         }
 
-        final long physicalAddress = addressMap.get(readCommand.getAddress());
+        final long physicalAddress = addressMap.get(command.getAddress());
         final byte[] content = flash.get((int) physicalAddress);
 
         return ProtobufCommandResult.newBuilder()
@@ -155,5 +171,27 @@ final class LogStorageUnitServer extends Thread {
         return ProtobufCommandResult.newBuilder()
                 .setType(ProtobufCommandResult.Type.ACK)
                 .build();
+    }
+
+    private ProtobufCommandResult processSealCommand(final SealCommand command) {
+        if (command.getEpoch() > serverEpoch) {
+            serverEpoch = command.getEpoch();
+            return ProtobufCommandResult.newBuilder()
+                    .setType(ProtobufCommandResult.Type.SEALED)
+                    .setHighestAddress(getHighestAddress())
+                    .build();
+        } else {
+            return ProtobufCommandResult.newBuilder()
+                    .setType(ProtobufCommandResult.Type.ERR_SEALED)
+                    .build();
+        }
+    }
+
+    private long getHighestAddress() {
+        if (addressMap.isEmpty()) {
+            return -1;
+        }
+        // TODO optimise
+        return Collections.max(addressMap.keySet());
     }
 }

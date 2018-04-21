@@ -19,12 +19,15 @@ message ProtobufCommand {
 message ProtobufCommandResult {
     enum Type {
         ACK = 0;
-        ERR_UNWRITTEN = 1;
-        ERR_WRITTEN = 2;
-        ERR_DELETED = 3;
+        SEALED = 1;
+        ERR_UNWRITTEN = 2;
+        ERR_WRITTEN = 3;
+        ERR_DELETED = 4;
+        ERR_SEALED = 5;
         INVALID_COMMAND = 10;
     }
 
     Type type = 1;
     bytes content = 2;
+    uint64 highestAddress = 3;
 }
