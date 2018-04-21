@@ -54,31 +54,23 @@ final class LogStorageUnitServer extends Thread {
     private void serveClient(final Socket socket) {
         try (final InputStream inputStream = socket.getInputStream();
              final OutputStream outputStream = socket.getOutputStream()) {
-            try {
-                while (true) {
-                    final Command command = CommandParser.parse(inputStream);
-                    if (command == null) {
-                        break;
-                    }
-                    logger.debug("Client sent command {}", command);
-
-                    processCommand(command, outputStream);
+            while (true) {
+                final Command command = CommandParser.parse(inputStream);
+                if (command == null) {
+                    break;
                 }
-            } catch (final InvalidCommandException e) {
-                logger.warn("", e);
-                ProtobufCommandResult.newBuilder()
-                        .setType(Protocol.ProtobufCommandResult.Type.INVALID_COMMAND)
-                        .build()
-                        .writeDelimitedTo(outputStream);
+                logger.debug("Client sent command {}", command);
+
+                processCommand(command, outputStream);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.warn("Exception while serving client", e);
         } finally {
             try {
                 socket.close();
                 logger.info("Client socket shutdown");
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.warn("Exception while closing socket", e);
             }
         }
     }
@@ -185,16 +177,16 @@ final class LogStorageUnitServer extends Thread {
                 .build();
     }
 
-    private ProtobufCommandResult processSealCommand(final SealCommand command) {
+    private SealCommandResult processSealCommand(final SealCommand command) {
         if (command.getEpoch() > serverEpoch) {
             serverEpoch = command.getEpoch();
-            return ProtobufCommandResult.newBuilder()
-                    .setType(ProtobufCommandResult.Type.SEALED)
+            return SealCommandResult.newBuilder()
+                    .setType(SealCommandResult.Type.ACK)
                     .setHighestAddress(getHighestAddress())
                     .build();
         } else {
-            return ProtobufCommandResult.newBuilder()
-                    .setType(ProtobufCommandResult.Type.ERR_SEALED)
+            return SealCommandResult.newBuilder()
+                    .setType(SealCommandResult.Type.ERR_SEALED)
                     .build();
         }
     }

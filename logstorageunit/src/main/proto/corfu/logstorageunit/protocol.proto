@@ -47,18 +47,12 @@ message DeleteCommandResult {
     Type type = 1;
 }
 
-message ProtobufCommandResult {
+message SealCommandResult {
     enum Type {
         ACK = 0;
-        SEALED = 1;
-        ERR_UNWRITTEN = 2;
-        ERR_WRITTEN = 3;
-        ERR_DELETED = 4;
-        ERR_SEALED = 5;
-        INVALID_COMMAND = 10;
+        ERR_SEALED = 1;
     }
 
     Type type = 1;
-    bytes content = 2;
     uint64 highestAddress = 3;
 }

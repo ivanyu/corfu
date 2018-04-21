@@ -17,9 +17,9 @@ public class WriteSealedTest extends WithServerConnection {
 
             new SealCommand(1).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult sealCommandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.SEALED, sealCommandResult.getType());
+            final SealCommandResult sealCommandResult =
+                    SealCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(SealCommandResult.Type.ACK, sealCommandResult.getType());
 
             new WriteCommand(0, 1234, "abc".getBytes()).toProtobuf()
                     .writeDelimitedTo(os);

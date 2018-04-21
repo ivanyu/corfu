@@ -17,9 +17,9 @@ public class ReadSealedTest extends WithServerConnection {
 
             new SealCommand(1).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult sealCommandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.SEALED, sealCommandResult.getType());
+            final SealCommandResult sealCommandResult =
+                    SealCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(SealCommandResult.Type.ACK, sealCommandResult.getType());
 
             new ReadCommand(0, 1234).toProtobuf()
                     .writeDelimitedTo(os);
