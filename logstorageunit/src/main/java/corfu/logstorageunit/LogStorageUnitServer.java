@@ -60,11 +60,9 @@ final class LogStorageUnitServer extends Thread {
                     if (command == null) {
                         break;
                     }
-
                     logger.debug("Client sent command {}", command);
 
-                    final ProtobufCommandResult commandResult = processCommand(command);
-                    commandResult.writeDelimitedTo(outputStream);
+                    processCommand(command, outputStream);
                 }
             } catch (final InvalidCommandException e) {
                 logger.warn("", e);
@@ -96,18 +94,25 @@ final class LogStorageUnitServer extends Thread {
         return this.started;
     }
 
-    private ProtobufCommandResult processCommand(final Command command) {
+    private void processCommand(final Command command, final OutputStream resultOutputStream) throws IOException {
         if (command instanceof WriteCommand) {
-            return processWriteCommand((WriteCommand) command);
+            processWriteCommand((WriteCommand) command)
+                    .writeDelimitedTo(resultOutputStream);
+            return;
         } else if (command instanceof ReadCommand) {
-            return processReadCommand((ReadCommand) command);
+            processReadCommand((ReadCommand) command)
+                    .writeDelimitedTo(resultOutputStream);
+            return;
         } else if (command instanceof DeleteCommand) {
-            return processDeleteCommand((DeleteCommand) command);
+            processDeleteCommand((DeleteCommand) command)
+                    .writeDelimitedTo(resultOutputStream);
+            return;
         } else if (command instanceof SealCommand) {
-            return processSealCommand((SealCommand) command);
+            processSealCommand((SealCommand) command)
+                    .writeDelimitedTo(resultOutputStream);
+            return;
         }
         assert false;
-        return null;
     }
 
     private ProtobufCommandResult processWriteCommand(final WriteCommand command) {
@@ -137,30 +142,30 @@ final class LogStorageUnitServer extends Thread {
                 .build();
     }
 
-    private ProtobufCommandResult processReadCommand(final ReadCommand command) {
+    private ReadCommandResult processReadCommand(final ReadCommand command) {
         if (serverEpoch > command.getEpoch()) {
-            return ProtobufCommandResult.newBuilder()
-                    .setType(ProtobufCommandResult.Type.ERR_SEALED)
+            return ReadCommandResult.newBuilder()
+                    .setType(ReadCommandResult.Type.ERR_SEALED)
                     .build();
         }
 
         if (deletedAddresses.contains(command.getAddress())) {
-            return ProtobufCommandResult.newBuilder()
-                    .setType(ProtobufCommandResult.Type.ERR_DELETED)
+            return ReadCommandResult.newBuilder()
+                    .setType(ReadCommandResult.Type.ERR_DELETED)
                     .build();
         }
 
         if (!addressMap.containsKey(command.getAddress())) {
-            return ProtobufCommandResult.newBuilder()
-                    .setType(ProtobufCommandResult.Type.ERR_UNWRITTEN)
+            return ReadCommandResult.newBuilder()
+                    .setType(ReadCommandResult.Type.ERR_UNWRITTEN)
                     .build();
         }
 
         final long physicalAddress = addressMap.get(command.getAddress());
         final byte[] content = flash.get((int) physicalAddress);
 
-        return ProtobufCommandResult.newBuilder()
-                .setType(ProtobufCommandResult.Type.ACK)
+        return ReadCommandResult.newBuilder()
+                .setType(ReadCommandResult.Type.ACK)
                 .setContent(ByteString.copyFrom(content))
                 .build();
     }

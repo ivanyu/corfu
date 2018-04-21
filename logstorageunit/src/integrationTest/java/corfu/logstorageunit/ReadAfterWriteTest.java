@@ -1,6 +1,6 @@
 package corfu.logstorageunit;
 
-import corfu.logstorageunit.Protocol.ProtobufCommandResult;
+import corfu.logstorageunit.Protocol.*;
 import corfu.logstorageunit.protocol.ReadCommand;
 import corfu.logstorageunit.protocol.WriteCommand;
 import org.junit.Assert;
@@ -23,9 +23,9 @@ public class ReadAfterWriteTest extends WithServerConnection {
 
             new ReadCommand(0, 1234).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult readCommandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, readCommandResult.getType());
+            final ReadCommandResult readCommandResult =
+                    ReadCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(ReadCommandResult.Type.ACK, readCommandResult.getType());
             Assert.assertEquals("abc", readCommandResult.getContent().toStringUtf8());
         }
     }

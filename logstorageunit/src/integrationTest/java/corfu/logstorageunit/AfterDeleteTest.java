@@ -1,6 +1,6 @@
 package corfu.logstorageunit;
 
-import corfu.logstorageunit.Protocol.ProtobufCommandResult;
+import corfu.logstorageunit.Protocol.*;
 import corfu.logstorageunit.protocol.DeleteCommand;
 import corfu.logstorageunit.protocol.ReadCommand;
 import corfu.logstorageunit.protocol.WriteCommand;
@@ -24,9 +24,9 @@ public class AfterDeleteTest extends WithServerConnection {
 
             new ReadCommand(0, 1234).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult readCommandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ERR_DELETED, readCommandResult.getType());
+            final ReadCommandResult readCommandResult =
+                    ReadCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(ReadCommandResult.Type.ERR_DELETED, readCommandResult.getType());
             Assert.assertTrue(readCommandResult.getContent().isEmpty());
         }
     }

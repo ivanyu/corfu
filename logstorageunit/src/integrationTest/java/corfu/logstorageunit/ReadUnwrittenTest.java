@@ -1,6 +1,6 @@
 package corfu.logstorageunit;
 
-import corfu.logstorageunit.Protocol.ProtobufCommandResult;
+import corfu.logstorageunit.Protocol.*;
 import corfu.logstorageunit.protocol.ReadCommand;
 import org.junit.Assert;
 import org.junit.Test;
@@ -15,9 +15,9 @@ public class ReadUnwrittenTest extends WithServerConnection {
              final InputStream is = clientSocket.getInputStream()) {
             new ReadCommand(0, 1234).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult commandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ERR_UNWRITTEN, commandResult.getType());
+            final ReadCommandResult commandResult =
+                    ReadCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(ReadCommandResult.Type.ERR_UNWRITTEN, commandResult.getType());
             Assert.assertTrue(commandResult.getContent().isEmpty());
         }
     }

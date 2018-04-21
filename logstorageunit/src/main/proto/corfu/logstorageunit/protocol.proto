@@ -16,6 +16,18 @@ message ProtobufCommand {
     bytes content = 4;
 }
 
+message ReadCommandResult {
+    enum Type {
+        ACK = 0;
+        ERR_UNWRITTEN = 1;
+        ERR_DELETED = 2;
+        ERR_SEALED = 3;
+    }
+
+    Type type = 1;
+    bytes content = 2;
+}
+
 message ProtobufCommandResult {
     enum Type {
         ACK = 0;
