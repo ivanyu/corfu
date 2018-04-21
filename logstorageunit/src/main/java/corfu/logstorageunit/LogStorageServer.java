@@ -1,10 +1,8 @@
 package corfu.logstorageunit;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Message;
 import com.google.protobuf.MessageLite;
-import corfu.logstorageunit.protocol.*;
-import corfu.logstorageunit.Protocol.*;
+import corfu.logstorageunit.Protocol.CommandWrapper;
+import corfu.logstorageunit.protocol.CommandParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,26 +11,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 
-final class LogStorageUnitServer extends Thread {
+final class LogStorageServer extends Thread {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private volatile boolean started = false;
     private final int port;
     private volatile int actualPort = -1;
 
-    LogStorageUnitServer(final int port) {
+    private final LogStorage logStorage = new LogStorage();
+
+    LogStorageServer(final int port) {
         this.port = port;
     }
-
-    private int serverEpoch = 0;
-    private HashMap<Long, Long> addressMap = new HashMap<>();
-    private HashSet<Long> deletedAddresses = new HashSet<>();
-    private ArrayList<byte[]> flash = new ArrayList<>();
 
     @Override
     public void run() {
@@ -63,7 +54,7 @@ final class LogStorageUnitServer extends Thread {
                 }
                 logger.debug("Client sent command {}", commandWrapper);
 
-                final MessageLite result = processCommand(commandWrapper);
+                final MessageLite result = logStorage.processCommand(commandWrapper);
                 result.writeDelimitedTo(outputStream);
             }
         } catch (Exception e) {
@@ -87,107 +78,5 @@ final class LogStorageUnitServer extends Thread {
 
     boolean isStarted() {
         return this.started;
-    }
-
-    private MessageLite processCommand(final CommandWrapper commandWrapper) {
-        switch (commandWrapper.getCommandCase()) {
-            case READ:
-                return processReadCommand(commandWrapper.getRead());
-            case WRITE:
-                return processWriteCommand(commandWrapper.getWrite());
-
-            case DELETE:
-                return processDeleteCommand(commandWrapper.getDelete());
-
-            case SEAL:
-                return processSealCommand(commandWrapper.getSeal());
-        }
-        assert false;
-        return null;
-    }
-
-    private ReadCommandResult processReadCommand(final CommandWrapper.ReadCommand command) {
-        if (serverEpoch > command.getEpoch()) {
-            return ReadCommandResult.newBuilder()
-                    .setType(ReadCommandResult.Type.ERR_SEALED)
-                    .build();
-        }
-
-        if (deletedAddresses.contains(command.getAddress())) {
-            return ReadCommandResult.newBuilder()
-                    .setType(ReadCommandResult.Type.ERR_DELETED)
-                    .build();
-        }
-
-        if (!addressMap.containsKey(command.getAddress())) {
-            return ReadCommandResult.newBuilder()
-                    .setType(ReadCommandResult.Type.ERR_UNWRITTEN)
-                    .build();
-        }
-
-        final long physicalAddress = addressMap.get(command.getAddress());
-        final byte[] content = flash.get((int) physicalAddress);
-
-        return ReadCommandResult.newBuilder()
-                .setType(ReadCommandResult.Type.ACK)
-                .setContent(ByteString.copyFrom(content))
-                .build();
-    }
-
-    private WriteCommandResult processWriteCommand(final CommandWrapper.WriteCommand command) {
-        if (serverEpoch > command.getEpoch()) {
-            return WriteCommandResult.newBuilder()
-                    .setType(WriteCommandResult.Type.ERR_SEALED)
-                    .build();
-        }
-
-        if (deletedAddresses.contains(command.getAddress())) {
-            return WriteCommandResult.newBuilder()
-                    .setType(WriteCommandResult.Type.ERR_DELETED)
-                    .build();
-        }
-
-        if (addressMap.containsKey(command.getAddress())) {
-            return WriteCommandResult.newBuilder()
-                    .setType(WriteCommandResult.Type.ERR_WRITTEN)
-                    .build();
-        }
-
-        addressMap.put(command.getAddress(), (long) flash.size());
-        flash.add(command.getContent().toByteArray());
-
-        return WriteCommandResult.newBuilder()
-                .setType(WriteCommandResult.Type.ACK)
-                .build();
-    }
-
-    private DeleteCommandResult processDeleteCommand(final CommandWrapper.DeleteCommand command) {
-        deletedAddresses.add(command.getAddress());
-
-        return DeleteCommandResult.newBuilder()
-                .setType(DeleteCommandResult.Type.ACK)
-                .build();
-    }
-
-    private SealCommandResult processSealCommand(final CommandWrapper.SealCommand command) {
-        if (command.getEpoch() > serverEpoch) {
-            serverEpoch = command.getEpoch();
-            return SealCommandResult.newBuilder()
-                    .setType(SealCommandResult.Type.ACK)
-                    .setHighestAddress(getHighestAddress())
-                    .build();
-        } else {
-            return SealCommandResult.newBuilder()
-                    .setType(SealCommandResult.Type.ERR_SEALED)
-                    .build();
-        }
-    }
-
-    private long getHighestAddress() {
-        if (addressMap.isEmpty()) {
-            return -1;
-        }
-        // TODO optimise
-        return Collections.max(addressMap.keySet());
     }
 }

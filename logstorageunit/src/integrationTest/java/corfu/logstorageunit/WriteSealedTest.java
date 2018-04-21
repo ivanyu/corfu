@@ -1,8 +1,7 @@
 package corfu.logstorageunit;
 
 import corfu.logstorageunit.Protocol.*;
-import corfu.logstorageunit.protocol.SealCommand;
-import corfu.logstorageunit.protocol.WriteCommand;
+import corfu.logstorageunit.protocol.CommandFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,13 +14,13 @@ public class WriteSealedTest extends WithServerConnection {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
 
-            new SealCommand(1).toProtobuf()
+            CommandFactory.createSealCommand(1)
                     .writeDelimitedTo(os);
             final SealCommandResult sealCommandResult =
                     SealCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(SealCommandResult.Type.ACK, sealCommandResult.getType());
 
-            new WriteCommand(0, 1234, "abc".getBytes()).toProtobuf()
+            CommandFactory.createWriteCommand(0, 1234, "abc".getBytes())
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult =
                     WriteCommandResult.parseDelimitedFrom(is);

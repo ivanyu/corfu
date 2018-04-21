@@ -1,7 +1,7 @@
 package corfu.logstorageunit;
 
 import corfu.logstorageunit.Protocol.ReadCommandResult;
-import corfu.logstorageunit.protocol.ReadCommand;
+import corfu.logstorageunit.protocol.CommandFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,7 +13,8 @@ public class ReadUnwrittenTest extends WithServerConnection {
     public void notAllowToReadUnwritten() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
-            new ReadCommand(0, 1234).toProtobuf()
+
+            CommandFactory.createReadCommand(0, 1234)
                     .writeDelimitedTo(os);
             final ReadCommandResult commandResult =
                     ReadCommandResult.parseDelimitedFrom(is);

@@ -1,8 +1,7 @@
 package corfu.logstorageunit;
 
 import corfu.logstorageunit.Protocol.*;
-import corfu.logstorageunit.protocol.ReadCommand;
-import corfu.logstorageunit.protocol.WriteCommand;
+import corfu.logstorageunit.protocol.CommandFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,13 +14,13 @@ public class ReadAfterWriteTest extends WithServerConnection {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
 
-            new WriteCommand(0, 1234, "abc".getBytes()).toProtobuf()
+            CommandFactory.createWriteCommand(0, 1234, "abc".getBytes())
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult =
                     WriteCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(WriteCommandResult.Type.ACK, writeCommandResult.getType());
 
-            new ReadCommand(0, 1234).toProtobuf()
+            CommandFactory.createReadCommand(0, 1234)
                     .writeDelimitedTo(os);
             final ReadCommandResult readCommandResult =
                     ReadCommandResult.parseDelimitedFrom(is);

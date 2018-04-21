@@ -2,18 +2,32 @@ syntax = "proto3";
 
 option java_package = "corfu.logstorageunit";
 
-message ProtobufCommand {
-    enum Type {
-        READ = 0;
-        WRITE = 1;
-        DELETE = 2;
-        SEAL = 3;
+message CommandWrapper {
+    message ReadCommand {
+        uint32 epoch = 1;
+        uint64 address = 2;
     }
 
-    Type type = 1;
-    uint32 epoch = 2;
-    uint64 address = 3;
-    bytes content = 4;
+    message WriteCommand {
+        uint32 epoch = 1;
+        uint64 address = 2;
+        bytes content = 3;
+    }
+
+    message DeleteCommand {
+        uint64 address = 1;
+    }
+
+    message SealCommand {
+        uint32 epoch = 1;
+    }
+
+    oneof command {
+        ReadCommand read = 1;
+        WriteCommand write = 2;
+        DeleteCommand delete = 3;
+        SealCommand seal = 4;
+    }
 }
 
 message ReadCommandResult {

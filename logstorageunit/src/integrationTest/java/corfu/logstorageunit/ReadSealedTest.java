@@ -1,8 +1,7 @@
 package corfu.logstorageunit;
 
 import corfu.logstorageunit.Protocol.*;
-import corfu.logstorageunit.protocol.ReadCommand;
-import corfu.logstorageunit.protocol.SealCommand;
+import corfu.logstorageunit.protocol.CommandFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,13 +14,13 @@ public class ReadSealedTest extends WithServerConnection {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
 
-            new SealCommand(1).toProtobuf()
+            CommandFactory.createSealCommand(1)
                     .writeDelimitedTo(os);
             final SealCommandResult sealCommandResult =
                     SealCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(SealCommandResult.Type.ACK, sealCommandResult.getType());
 
-            new ReadCommand(0, 1234).toProtobuf()
+            CommandFactory.createReadCommand(0, 1234)
                     .writeDelimitedTo(os);
             final ReadCommandResult readCommandResult =
                     ReadCommandResult.parseDelimitedFrom(is);
