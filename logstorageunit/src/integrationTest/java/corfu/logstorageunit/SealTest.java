@@ -40,6 +40,6 @@ public class SealTest extends WithServerConnection {
                     ProtobufCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(ProtobufCommandResult.Type.SEALED, sealCommandResult.getType());
             Assert.assertEquals(3, sealCommandResult.getHighestAddress());
-            }
+        }
     }
 }
