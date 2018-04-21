@@ -1,6 +1,6 @@
 package corfu.logstorageunit;
 
-import corfu.logstorageunit.Protocol.*;
+import corfu.logstorageunit.Protocol.ReadCommandResult;
 import corfu.logstorageunit.protocol.ReadCommand;
 import org.junit.Assert;
 import org.junit.Test;

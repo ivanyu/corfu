@@ -1,6 +1,6 @@
 package corfu.logstorageunit;
 
-import corfu.logstorageunit.Protocol.ProtobufCommandResult;
+import corfu.logstorageunit.Protocol.WriteCommandResult;
 import corfu.logstorageunit.protocol.ReadCommand;
 import corfu.logstorageunit.protocol.WriteCommand;
 import org.junit.Assert;
@@ -17,15 +17,14 @@ public class WriteWrittenTest extends WithServerConnection {
             final WriteCommand writeCommand = new WriteCommand(0, 1234, "abc".getBytes());
 
             writeCommand.toProtobuf().writeDelimitedTo(os);
-            final ProtobufCommandResult commandResult1 =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, commandResult1.getType());
+            final WriteCommandResult commandResult1 =
+                    WriteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(WriteCommandResult.Type.ACK, commandResult1.getType());
 
             writeCommand.toProtobuf().writeDelimitedTo(os);
-            final ProtobufCommandResult commandResult2 =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ERR_WRITTEN, commandResult2.getType());
-            Assert.assertTrue(commandResult2.getContent().isEmpty());
+            final WriteCommandResult commandResult2 =
+                    WriteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(WriteCommandResult.Type.ERR_WRITTEN, commandResult2.getType());
         }
     }
 }

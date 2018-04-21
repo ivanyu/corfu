@@ -1,6 +1,6 @@
 package corfu.logstorageunit;
 
-import corfu.logstorageunit.Protocol.ProtobufCommandResult;
+import corfu.logstorageunit.Protocol.*;
 import corfu.logstorageunit.protocol.ReadCommand;
 import corfu.logstorageunit.protocol.SealCommand;
 import corfu.logstorageunit.protocol.WriteCommand;
@@ -18,21 +18,21 @@ public class SealTest extends WithServerConnection {
 
             new WriteCommand(0, 0, "abc".getBytes()).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult writeCommandResult1 =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, writeCommandResult1.getType());
+            final WriteCommandResult writeCommandResult1 =
+                    WriteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(WriteCommandResult.Type.ACK, writeCommandResult1.getType());
 
             new WriteCommand(0, 1, "abc".getBytes()).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult writeCommandResult2 =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, writeCommandResult2.getType());
+            final WriteCommandResult writeCommandResult2 =
+                    WriteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(WriteCommandResult.Type.ACK, writeCommandResult2.getType());
 
             new WriteCommand(0, 3, "abc".getBytes()).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult writeCommandResult3 =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, writeCommandResult3.getType());
+            final WriteCommandResult writeCommandResult3 =
+                    WriteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(WriteCommandResult.Type.ACK, writeCommandResult3.getType());
 
             new SealCommand(1).toProtobuf()
                     .writeDelimitedTo(os);

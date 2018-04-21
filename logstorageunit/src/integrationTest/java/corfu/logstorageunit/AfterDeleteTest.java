@@ -43,10 +43,9 @@ public class AfterDeleteTest extends WithServerConnection {
 
             new WriteCommand(0, 1234, "abc".getBytes()).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult writeCommandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ERR_DELETED, writeCommandResult.getType());
-            Assert.assertTrue(writeCommandResult.getContent().isEmpty());
+            final WriteCommandResult writeCommandResult =
+                    WriteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(WriteCommandResult.Type.ERR_DELETED, writeCommandResult.getType());
         }
     }
 }

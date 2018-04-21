@@ -95,51 +95,31 @@ final class LogStorageUnitServer extends Thread {
     }
 
     private void processCommand(final Command command, final OutputStream resultOutputStream) throws IOException {
+        if (command instanceof ReadCommand) {
+            processReadCommand((ReadCommand) command)
+                    .writeDelimitedTo(resultOutputStream);
+            return;
+        }
+
         if (command instanceof WriteCommand) {
             processWriteCommand((WriteCommand) command)
                     .writeDelimitedTo(resultOutputStream);
             return;
-        } else if (command instanceof ReadCommand) {
-            processReadCommand((ReadCommand) command)
-                    .writeDelimitedTo(resultOutputStream);
-            return;
-        } else if (command instanceof DeleteCommand) {
+        }
+
+        if (command instanceof DeleteCommand) {
             processDeleteCommand((DeleteCommand) command)
                     .writeDelimitedTo(resultOutputStream);
             return;
-        } else if (command instanceof SealCommand) {
+        }
+
+        if (command instanceof SealCommand) {
             processSealCommand((SealCommand) command)
                     .writeDelimitedTo(resultOutputStream);
             return;
         }
+
         assert false;
-    }
-
-    private ProtobufCommandResult processWriteCommand(final WriteCommand command) {
-        if (serverEpoch > command.getEpoch()) {
-            return ProtobufCommandResult.newBuilder()
-                    .setType(ProtobufCommandResult.Type.ERR_SEALED)
-                    .build();
-        }
-
-        if (deletedAddresses.contains(command.getAddress())) {
-            return ProtobufCommandResult.newBuilder()
-                    .setType(ProtobufCommandResult.Type.ERR_DELETED)
-                    .build();
-        }
-
-        if (addressMap.containsKey(command.getAddress())) {
-            return ProtobufCommandResult.newBuilder()
-                    .setType(ProtobufCommandResult.Type.ERR_WRITTEN)
-                    .build();
-        }
-
-        addressMap.put(command.getAddress(), (long) flash.size());
-        flash.add(command.getContent());
-
-        return ProtobufCommandResult.newBuilder()
-                .setType(ProtobufCommandResult.Type.ACK)
-                .build();
     }
 
     private ReadCommandResult processReadCommand(final ReadCommand command) {
@@ -167,6 +147,33 @@ final class LogStorageUnitServer extends Thread {
         return ReadCommandResult.newBuilder()
                 .setType(ReadCommandResult.Type.ACK)
                 .setContent(ByteString.copyFrom(content))
+                .build();
+    }
+
+    private WriteCommandResult processWriteCommand(final WriteCommand command) {
+        if (serverEpoch > command.getEpoch()) {
+            return WriteCommandResult.newBuilder()
+                    .setType(WriteCommandResult.Type.ERR_SEALED)
+                    .build();
+        }
+
+        if (deletedAddresses.contains(command.getAddress())) {
+            return WriteCommandResult.newBuilder()
+                    .setType(WriteCommandResult.Type.ERR_DELETED)
+                    .build();
+        }
+
+        if (addressMap.containsKey(command.getAddress())) {
+            return WriteCommandResult.newBuilder()
+                    .setType(WriteCommandResult.Type.ERR_WRITTEN)
+                    .build();
+        }
+
+        addressMap.put(command.getAddress(), (long) flash.size());
+        flash.add(command.getContent());
+
+        return WriteCommandResult.newBuilder()
+                .setType(WriteCommandResult.Type.ACK)
                 .build();
     }
 

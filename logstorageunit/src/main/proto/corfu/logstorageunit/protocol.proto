@@ -28,6 +28,17 @@ message ReadCommandResult {
     bytes content = 2;
 }
 
+message WriteCommandResult {
+    enum Type {
+        ACK = 0;
+        ERR_WRITTEN = 1;
+        ERR_DELETED = 2;
+        ERR_SEALED = 3;
+    }
+
+    Type type = 1;
+}
+
 message ProtobufCommandResult {
     enum Type {
         ACK = 0;

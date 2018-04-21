@@ -1,6 +1,6 @@
 package corfu.logstorageunit;
 
-import corfu.logstorageunit.Protocol.ProtobufCommandResult;
+import corfu.logstorageunit.Protocol.*;
 import corfu.logstorageunit.protocol.SealCommand;
 import corfu.logstorageunit.protocol.WriteCommand;
 import org.junit.Assert;
@@ -23,10 +23,9 @@ public class WriteSealedTest extends WithServerConnection {
 
             new WriteCommand(0, 1234, "abc".getBytes()).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult writeCommandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ERR_SEALED, writeCommandResult.getType());
-            Assert.assertTrue(writeCommandResult.getContent().isEmpty());
+            final WriteCommandResult writeCommandResult =
+                    WriteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(WriteCommandResult.Type.ERR_SEALED, writeCommandResult.getType());
         }
     }
 }

@@ -17,9 +17,9 @@ public class ReadAfterWriteTest extends WithServerConnection {
 
             new WriteCommand(0, 1234, "abc".getBytes()).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult writeCommandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, writeCommandResult.getType());
+            final WriteCommandResult writeCommandResult =
+                    WriteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(WriteCommandResult.Type.ACK, writeCommandResult.getType());
 
             new ReadCommand(0, 1234).toProtobuf()
                     .writeDelimitedTo(os);
