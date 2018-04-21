@@ -177,11 +177,11 @@ final class LogStorageUnitServer extends Thread {
                 .build();
     }
 
-    private ProtobufCommandResult processDeleteCommand(final DeleteCommand command) {
+    private DeleteCommandResult processDeleteCommand(final DeleteCommand command) {
         deletedAddresses.add(command.getAddress());
 
-        return ProtobufCommandResult.newBuilder()
-                .setType(ProtobufCommandResult.Type.ACK)
+        return DeleteCommandResult.newBuilder()
+                .setType(DeleteCommandResult.Type.ACK)
                 .build();
     }
 

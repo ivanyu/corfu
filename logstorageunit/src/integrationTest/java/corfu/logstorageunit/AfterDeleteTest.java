@@ -18,9 +18,9 @@ public class AfterDeleteTest extends WithServerConnection {
 
             new DeleteCommand(1234).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult deleteCommandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, deleteCommandResult.getType());
+            final DeleteCommandResult deleteCommandResult =
+                    DeleteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(DeleteCommandResult.Type.ACK, deleteCommandResult.getType());
 
             new ReadCommand(0, 1234).toProtobuf()
                     .writeDelimitedTo(os);
@@ -37,9 +37,9 @@ public class AfterDeleteTest extends WithServerConnection {
 
             new DeleteCommand(1234).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult deleteCommandResult =
-                    ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, deleteCommandResult.getType());
+            final DeleteCommandResult deleteCommandResult =
+                    DeleteCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(DeleteCommandResult.Type.ACK, deleteCommandResult.getType());
 
             new WriteCommand(0, 1234, "abc".getBytes()).toProtobuf()
                     .writeDelimitedTo(os);

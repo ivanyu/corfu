@@ -39,6 +39,14 @@ message WriteCommandResult {
     Type type = 1;
 }
 
+message DeleteCommandResult {
+    enum Type {
+        ACK = 0;
+    }
+
+    Type type = 1;
+}
+
 message ProtobufCommandResult {
     enum Type {
         ACK = 0;
