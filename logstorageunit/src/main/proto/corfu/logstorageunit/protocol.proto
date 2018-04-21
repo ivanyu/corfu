@@ -21,6 +21,7 @@ message ProtobufCommandResult {
         ACK = 0;
         ERR_UNWRITTEN = 1;
         ERR_WRITTEN = 2;
+        ERR_DELETED = 3;
         INVALID_COMMAND = 10;
     }
 

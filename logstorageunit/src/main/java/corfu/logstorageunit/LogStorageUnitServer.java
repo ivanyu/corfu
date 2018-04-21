@@ -13,6 +13,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 final class LogStorageUnitServer extends Thread {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -25,7 +26,8 @@ final class LogStorageUnitServer extends Thread {
         this.port = port;
     }
 
-    private HashMap<Long, Long> addressMap = new HashMap<Long, Long>();
+    private HashMap<Long, Long> addressMap = new HashMap<>();
+    private HashSet<Long> deletedAddresses = new HashSet<>();
     private ArrayList<byte[]> flash = new ArrayList<>();
 
     @Override
@@ -97,12 +99,20 @@ final class LogStorageUnitServer extends Thread {
             return processWriteCommand((WriteCommand) command);
         } else if (command instanceof ReadCommand) {
             return processReadCommand((ReadCommand) command);
+        } else if (command instanceof DeleteCommand) {
+            return processDeleteCommand((DeleteCommand) command);
         }
         assert false;
         return null;
     }
 
     private ProtobufCommandResult processWriteCommand(final WriteCommand writeCommand) {
+        if (deletedAddresses.contains(writeCommand.getAddress())) {
+            return ProtobufCommandResult.newBuilder()
+                    .setType(ProtobufCommandResult.Type.ERR_DELETED)
+                    .build();
+        }
+
         if (addressMap.containsKey(writeCommand.getAddress())) {
             return ProtobufCommandResult.newBuilder()
                     .setType(ProtobufCommandResult.Type.ERR_WRITTEN)
@@ -118,6 +128,12 @@ final class LogStorageUnitServer extends Thread {
     }
 
     private ProtobufCommandResult processReadCommand(final ReadCommand readCommand) {
+        if (deletedAddresses.contains(readCommand.getAddress())) {
+            return ProtobufCommandResult.newBuilder()
+                    .setType(ProtobufCommandResult.Type.ERR_DELETED)
+                    .build();
+        }
+
         if (!addressMap.containsKey(readCommand.getAddress())) {
             return ProtobufCommandResult.newBuilder()
                     .setType(ProtobufCommandResult.Type.ERR_UNWRITTEN)
@@ -130,6 +146,14 @@ final class LogStorageUnitServer extends Thread {
         return ProtobufCommandResult.newBuilder()
                 .setType(ProtobufCommandResult.Type.ACK)
                 .setContent(ByteString.copyFrom(content))
+                .build();
+    }
+
+    private ProtobufCommandResult processDeleteCommand(final DeleteCommand command) {
+        deletedAddresses.add(command.getAddress());
+
+        return ProtobufCommandResult.newBuilder()
+                .setType(ProtobufCommandResult.Type.ACK)
                 .build();
     }
 }

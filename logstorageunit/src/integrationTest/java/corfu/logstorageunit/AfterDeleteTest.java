@@ -10,7 +10,7 @@ import org.junit.Test;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class ReadAfterDeleteTest extends WithServerConnection {
+public class AfterDeleteTest extends WithServerConnection {
     @Test(timeout = 300)
     public void notAllowToReadAfterDelete() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
@@ -18,16 +18,35 @@ public class ReadAfterDeleteTest extends WithServerConnection {
 
             new DeleteCommand(1234).toProtobuf()
                     .writeDelimitedTo(os);
-            final ProtobufCommandResult writeCommandResult =
+            final ProtobufCommandResult deleteCommandResult =
                     ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, writeCommandResult.getType());
+            Assert.assertEquals(ProtobufCommandResult.Type.ACK, deleteCommandResult.getType());
 
             new ReadCommand(0, 1234).toProtobuf()
                     .writeDelimitedTo(os);
             final ProtobufCommandResult readCommandResult =
                     ProtobufCommandResult.parseDelimitedFrom(is);
-            Assert.assertEquals(ProtobufCommandResult.Type.ACK, readCommandResult.getType());
-            Assert.assertEquals("abc", readCommandResult.getContent().toStringUtf8());
+            Assert.assertEquals(ProtobufCommandResult.Type.ERR_DELETED, readCommandResult.getType());
+            Assert.assertTrue(readCommandResult.getContent().isEmpty());
+        }
+    }
+    @Test(timeout = 300)
+    public void notAllowToWriteAfterDelete() throws Exception {
+        try (final OutputStream os = clientSocket.getOutputStream();
+             final InputStream is = clientSocket.getInputStream()) {
+
+            new DeleteCommand(1234).toProtobuf()
+                    .writeDelimitedTo(os);
+            final ProtobufCommandResult deleteCommandResult =
+                    ProtobufCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(ProtobufCommandResult.Type.ACK, deleteCommandResult.getType());
+
+            new WriteCommand(0, 1234, "abc".getBytes()).toProtobuf()
+                    .writeDelimitedTo(os);
+            final ProtobufCommandResult writeCommandResult =
+                    ProtobufCommandResult.parseDelimitedFrom(is);
+            Assert.assertEquals(ProtobufCommandResult.Type.ERR_DELETED, writeCommandResult.getType());
+            Assert.assertTrue(writeCommandResult.getContent().isEmpty());
         }
     }
 }

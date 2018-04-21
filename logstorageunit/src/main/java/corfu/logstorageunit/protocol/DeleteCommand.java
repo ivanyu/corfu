@@ -4,7 +4,7 @@ import corfu.logstorageunit.Protocol;
 
 import java.util.Objects;
 
-final public class DeleteCommand implements Command {
+public final class DeleteCommand implements Command {
     private final long address;
 
     public DeleteCommand(long address) {
