@@ -1,6 +1,8 @@
 package corfu.logstorageunit;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Message;
+import com.google.protobuf.MessageLite;
 import corfu.logstorageunit.protocol.*;
 import corfu.logstorageunit.Protocol.*;
 import org.slf4j.Logger;
@@ -55,13 +57,14 @@ final class LogStorageUnitServer extends Thread {
         try (final InputStream inputStream = socket.getInputStream();
              final OutputStream outputStream = socket.getOutputStream()) {
             while (true) {
-                final Command command = CommandParser.parse(inputStream);
-                if (command == null) {
+                final CommandWrapper commandWrapper = CommandParser.parse(inputStream);
+                if (commandWrapper == null) {
                     break;
                 }
-                logger.debug("Client sent command {}", command);
+                logger.debug("Client sent command {}", commandWrapper);
 
-                processCommand(command, outputStream);
+                final MessageLite result = processCommand(commandWrapper);
+                result.writeDelimitedTo(outputStream);
             }
         } catch (Exception e) {
             logger.warn("Exception while serving client", e);
@@ -86,35 +89,24 @@ final class LogStorageUnitServer extends Thread {
         return this.started;
     }
 
-    private void processCommand(final Command command, final OutputStream resultOutputStream) throws IOException {
-        if (command instanceof ReadCommand) {
-            processReadCommand((ReadCommand) command)
-                    .writeDelimitedTo(resultOutputStream);
-            return;
-        }
+    private MessageLite processCommand(final CommandWrapper commandWrapper) {
+        switch (commandWrapper.getCommandCase()) {
+            case READ:
+                return processReadCommand(commandWrapper.getRead());
+            case WRITE:
+                return processWriteCommand(commandWrapper.getWrite());
 
-        if (command instanceof WriteCommand) {
-            processWriteCommand((WriteCommand) command)
-                    .writeDelimitedTo(resultOutputStream);
-            return;
-        }
+            case DELETE:
+                return processDeleteCommand(commandWrapper.getDelete());
 
-        if (command instanceof DeleteCommand) {
-            processDeleteCommand((DeleteCommand) command)
-                    .writeDelimitedTo(resultOutputStream);
-            return;
+            case SEAL:
+                return processSealCommand(commandWrapper.getSeal());
         }
-
-        if (command instanceof SealCommand) {
-            processSealCommand((SealCommand) command)
-                    .writeDelimitedTo(resultOutputStream);
-            return;
-        }
-
         assert false;
+        return null;
     }
 
-    private ReadCommandResult processReadCommand(final ReadCommand command) {
+    private ReadCommandResult processReadCommand(final CommandWrapper.ReadCommand command) {
         if (serverEpoch > command.getEpoch()) {
             return ReadCommandResult.newBuilder()
                     .setType(ReadCommandResult.Type.ERR_SEALED)
@@ -142,7 +134,7 @@ final class LogStorageUnitServer extends Thread {
                 .build();
     }
 
-    private WriteCommandResult processWriteCommand(final WriteCommand command) {
+    private WriteCommandResult processWriteCommand(final CommandWrapper.WriteCommand command) {
         if (serverEpoch > command.getEpoch()) {
             return WriteCommandResult.newBuilder()
                     .setType(WriteCommandResult.Type.ERR_SEALED)
@@ -162,14 +154,14 @@ final class LogStorageUnitServer extends Thread {
         }
 
         addressMap.put(command.getAddress(), (long) flash.size());
-        flash.add(command.getContent());
+        flash.add(command.getContent().toByteArray());
 
         return WriteCommandResult.newBuilder()
                 .setType(WriteCommandResult.Type.ACK)
                 .build();
     }
 
-    private DeleteCommandResult processDeleteCommand(final DeleteCommand command) {
+    private DeleteCommandResult processDeleteCommand(final CommandWrapper.DeleteCommand command) {
         deletedAddresses.add(command.getAddress());
 
         return DeleteCommandResult.newBuilder()
@@ -177,7 +169,7 @@ final class LogStorageUnitServer extends Thread {
                 .build();
     }
 
-    private SealCommandResult processSealCommand(final SealCommand command) {
+    private SealCommandResult processSealCommand(final CommandWrapper.SealCommand command) {
         if (command.getEpoch() > serverEpoch) {
             serverEpoch = command.getEpoch();
             return SealCommandResult.newBuilder()
