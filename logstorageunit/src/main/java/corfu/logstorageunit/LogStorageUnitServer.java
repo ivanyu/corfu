@@ -31,44 +31,19 @@ final class LogStorageUnitServer extends Thread {
     @Override
     public void run() {
         try {
-            final ServerSocket ss = new ServerSocket(this.port);
-            this.actualPort = ss.getLocalPort();
+            final ServerSocket serverSocket = new ServerSocket(this.port);
+            this.actualPort = serverSocket.getLocalPort();
             this.started = true;
 
             logger.info("Server started");
 
             while (true) {
-                final Socket socket = ss.accept();
+                final Socket clientSocket = serverSocket.accept();
                 logger.info("Client connected");
-                serveClient(socket);
+                new ClientServingThread(clientSocket, logStorageUnit).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void serveClient(final Socket socket) {
-        try (final InputStream inputStream = socket.getInputStream();
-             final OutputStream outputStream = socket.getOutputStream()) {
-            while (true) {
-                final CommandWrapper commandWrapper = CommandParser.parse(inputStream);
-                if (commandWrapper == null) {
-                    break;
-                }
-                logger.debug("Client sent command {}", commandWrapper);
-
-                final MessageLite result = logStorageUnit.processCommand(commandWrapper);
-                result.writeDelimitedTo(outputStream);
-            }
-        } catch (Exception e) {
-            logger.warn("Exception while serving client", e);
-        } finally {
-            try {
-                socket.close();
-                logger.info("Client socket shutdown");
-            } catch (IOException e) {
-                logger.warn("Exception while closing socket", e);
-            }
         }
     }
 
