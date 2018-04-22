@@ -7,12 +7,16 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 class WithServerConnection {
-    private LogStorageServer server;
+    private LogStorageUnitServer server;
     protected Socket clientSocket;
+
+    protected int PAGE_SIZE = 10;
+    protected int PAGE_COUNT = 10;
 
     @Before
     public void before() throws Exception {
-        server = new LogStorageServer(0);
+        final LogStorageUnit logStorageUnit = new LogStorageUnit(PAGE_SIZE, PAGE_COUNT);
+        server = new LogStorageUnitServer(0, logStorageUnit);
         server.start();
 
         while (!server.isStarted()) {

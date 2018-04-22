@@ -15,18 +15,22 @@ public class ReadAfterWriteTest extends WithServerConnection {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
 
-            CommandFactory.createWriteCommand(0, 1234, "abc".getBytes(Charset.forName("UTF-8")))
+            final byte[] pageContent = "abc".getBytes(Charset.forName("UTF-8"));
+            final byte[] pageToWrite = new byte[PAGE_SIZE];
+            System.arraycopy(pageContent, 0, pageToWrite, 0, pageContent.length);
+
+            CommandFactory.createWriteCommand(0, 0, pageToWrite)
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult =
                     WriteCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(WriteCommandResult.Type.ACK, writeCommandResult.getType());
 
-            CommandFactory.createReadCommand(0, 1234)
+            CommandFactory.createReadCommand(0, 0)
                     .writeDelimitedTo(os);
             final ReadCommandResult readCommandResult =
                     ReadCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(ReadCommandResult.Type.ACK, readCommandResult.getType());
-            Assert.assertEquals("abc", readCommandResult.getContent().toStringUtf8());
+            Assert.assertArrayEquals(pageToWrite, readCommandResult.getContent().toByteArray());
         }
     }
 }

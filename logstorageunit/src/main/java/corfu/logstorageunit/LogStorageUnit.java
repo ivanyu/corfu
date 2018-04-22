@@ -3,17 +3,26 @@ package corfu.logstorageunit;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageLite;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
-class LogStorage {
+class LogStorageUnit {
+
+    private final int pageSize;
+    private final int pageCount;
+    private byte[] flash;
 
     private int serverEpoch = 0;
-    private HashMap<Long, Long> addressMap = new HashMap<>();
-    private HashSet<Long> deletedAddresses = new HashSet<>();
-    private ArrayList<byte[]> flash = new ArrayList<>();
+    private HashMap<Long, Integer> pageMap = new HashMap<>();
+    private HashSet<Long> deletedPages = new HashSet<>();
+    private long highestWrittenLogicalPageNumber = -1;
+    private int highestWrittenPhysicalNumber = -1;
+
+    LogStorageUnit(final int pageSize, final int pageCount) {
+        this.pageSize = pageSize;
+        this.pageCount = pageCount;
+        this.flash = new byte[pageSize * pageCount];
+    }
 
     MessageLite processCommand(final Protocol.CommandWrapper commandWrapper) {
         switch (commandWrapper.getCommandCase()) {
@@ -40,48 +49,61 @@ class LogStorage {
                     .build();
         }
 
-        if (deletedAddresses.contains(command.getAddress())) {
+        if (deletedPages.contains(command.getPageNumber())) {
             return Protocol.ReadCommandResult.newBuilder()
                     .setType(Protocol.ReadCommandResult.Type.ERR_DELETED)
                     .build();
         }
 
-        if (!addressMap.containsKey(command.getAddress())) {
+        if (!pageMap.containsKey(command.getPageNumber())) {
             return Protocol.ReadCommandResult.newBuilder()
                     .setType(Protocol.ReadCommandResult.Type.ERR_UNWRITTEN)
                     .build();
         }
 
-        final long physicalAddress = addressMap.get(command.getAddress());
-        final byte[] content = flash.get((int) physicalAddress);
+        final int physicalPageNumber = pageMap.get(command.getPageNumber());
+        final int physicalAddress = physicalPageNumber * pageSize;
+        final ByteString content = ByteString.copyFrom(flash, physicalAddress, pageSize);
 
         return Protocol.ReadCommandResult.newBuilder()
                 .setType(Protocol.ReadCommandResult.Type.ACK)
-                .setContent(ByteString.copyFrom(content))
+                .setContent(content)
                 .build();
     }
 
     private Protocol.WriteCommandResult processWriteCommand(final Protocol.CommandWrapper.WriteCommand command) {
+        if (command.getContent().size() != pageSize) {
+            return Protocol.WriteCommandResult.newBuilder()
+                    .setType(Protocol.WriteCommandResult.Type.ERR_CONTENT_SIZE)
+                    .build();
+        }
+
         if (serverEpoch > command.getEpoch()) {
             return Protocol.WriteCommandResult.newBuilder()
                     .setType(Protocol.WriteCommandResult.Type.ERR_SEALED)
                     .build();
         }
 
-        if (deletedAddresses.contains(command.getAddress())) {
+        if (deletedPages.contains(command.getPageNumber())) {
             return Protocol.WriteCommandResult.newBuilder()
                     .setType(Protocol.WriteCommandResult.Type.ERR_DELETED)
                     .build();
         }
 
-        if (addressMap.containsKey(command.getAddress())) {
+        if (pageMap.containsKey(command.getPageNumber())) {
             return Protocol.WriteCommandResult.newBuilder()
                     .setType(Protocol.WriteCommandResult.Type.ERR_WRITTEN)
                     .build();
         }
 
-        addressMap.put(command.getAddress(), (long) flash.size());
-        flash.add(command.getContent().toByteArray());
+        highestWrittenLogicalPageNumber = Math.max(
+                highestWrittenLogicalPageNumber, command.getPageNumber());
+
+        highestWrittenPhysicalNumber += 1;
+        final int newPhysicalAddress = highestWrittenPhysicalNumber * pageSize;
+        pageMap.put(command.getPageNumber(), newPhysicalAddress);
+
+        command.getContent().copyTo(flash, newPhysicalAddress);
 
         return Protocol.WriteCommandResult.newBuilder()
                 .setType(Protocol.WriteCommandResult.Type.ACK)
@@ -89,7 +111,7 @@ class LogStorage {
     }
 
     private Protocol.DeleteCommandResult processDeleteCommand(final Protocol.CommandWrapper.DeleteCommand command) {
-        deletedAddresses.add(command.getAddress());
+        deletedPages.add(command.getAddress());
 
         return Protocol.DeleteCommandResult.newBuilder()
                 .setType(Protocol.DeleteCommandResult.Type.ACK)
@@ -101,20 +123,12 @@ class LogStorage {
             serverEpoch = command.getEpoch();
             return Protocol.SealCommandResult.newBuilder()
                     .setType(Protocol.SealCommandResult.Type.ACK)
-                    .setHighestAddress(getHighestAddress())
+                    .setHighestPageNumber(highestWrittenLogicalPageNumber)
                     .build();
         } else {
             return Protocol.SealCommandResult.newBuilder()
                     .setType(Protocol.SealCommandResult.Type.ERR_SEALED)
                     .build();
         }
-    }
-
-    private long getHighestAddress() {
-        if (addressMap.isEmpty()) {
-            return -1;
-        }
-        // TODO optimise
-        return Collections.max(addressMap.keySet());
     }
 }

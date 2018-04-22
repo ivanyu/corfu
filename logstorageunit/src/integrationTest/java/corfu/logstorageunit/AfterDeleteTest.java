@@ -34,13 +34,15 @@ public class AfterDeleteTest extends WithServerConnection {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
 
+            final byte[] pageToWrite = new byte[PAGE_SIZE];
+
             CommandFactory.createDeleteCommand(1234)
                     .writeDelimitedTo(os);
             final DeleteCommandResult deleteCommandResult =
                     DeleteCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(DeleteCommandResult.Type.ACK, deleteCommandResult.getType());
 
-            CommandFactory.createWriteCommand(0, 1234, "abc".getBytes(Charset.forName("UTF-8")))
+            CommandFactory.createWriteCommand(0, 1234, pageToWrite)
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult =
                     WriteCommandResult.parseDelimitedFrom(is);

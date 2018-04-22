@@ -15,13 +15,15 @@ public class WriteSealedTest extends WithServerConnection {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
 
+            final byte[] pageToWrite = new byte[PAGE_SIZE];
+
             CommandFactory.createSealCommand(1)
                     .writeDelimitedTo(os);
             final SealCommandResult sealCommandResult =
                     SealCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(SealCommandResult.Type.ACK, sealCommandResult.getType());
 
-            CommandFactory.createWriteCommand(0, 1234, "abc".getBytes(Charset.forName("UTF-8")))
+            CommandFactory.createWriteCommand(0, 1234, pageToWrite)
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult =
                     WriteCommandResult.parseDelimitedFrom(is);

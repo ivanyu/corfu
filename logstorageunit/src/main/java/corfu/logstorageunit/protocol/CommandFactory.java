@@ -4,11 +4,11 @@ import com.google.protobuf.ByteString;
 import corfu.logstorageunit.Protocol.CommandWrapper;
 
 public final class CommandFactory {
-    public static CommandWrapper createReadCommand(final int epoch, final long address) {
+    public static CommandWrapper createReadCommand(final int epoch, final long pageNumber) {
         final CommandWrapper.ReadCommand readCommand =
                 CommandWrapper.ReadCommand.newBuilder()
                         .setEpoch(epoch)
-                        .setAddress(address)
+                        .setPageNumber(pageNumber)
                         .build();
         return CommandWrapper.newBuilder()
                 .setRead(readCommand)
@@ -16,12 +16,12 @@ public final class CommandFactory {
     }
 
     public static CommandWrapper createWriteCommand(final int epoch,
-                                                    final long address,
+                                                    final long pageNumber,
                                                     final byte[] content) {
         final CommandWrapper.WriteCommand writeCommand =
                 CommandWrapper.WriteCommand.newBuilder()
                         .setEpoch(epoch)
-                        .setAddress(address)
+                        .setPageNumber(pageNumber)
                         .setContent(ByteString.copyFrom(content))
                         .build();
         return CommandWrapper.newBuilder()

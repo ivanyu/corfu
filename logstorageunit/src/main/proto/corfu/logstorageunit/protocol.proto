@@ -5,12 +5,12 @@ option java_package = "corfu.logstorageunit";
 message CommandWrapper {
     message ReadCommand {
         uint32 epoch = 1;
-        uint64 address = 2;
+        uint64 pageNumber = 2;
     }
 
     message WriteCommand {
         uint32 epoch = 1;
-        uint64 address = 2;
+        uint64 pageNumber = 2;
         bytes content = 3;
     }
 
@@ -45,9 +45,10 @@ message ReadCommandResult {
 message WriteCommandResult {
     enum Type {
         ACK = 0;
-        ERR_WRITTEN = 1;
-        ERR_DELETED = 2;
-        ERR_SEALED = 3;
+        ERR_CONTENT_SIZE = 1;
+        ERR_WRITTEN = 2;
+        ERR_DELETED = 3;
+        ERR_SEALED = 4;
     }
 
     Type type = 1;
@@ -68,5 +69,5 @@ message SealCommandResult {
     }
 
     Type type = 1;
-    uint64 highestAddress = 3;
+    uint64 highestPageNumber = 3;
 }

@@ -15,19 +15,21 @@ public class SealTest extends WithServerConnection {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
 
-            CommandFactory.createWriteCommand(0, 0, "abc".getBytes(Charset.forName("UTF-8")))
+            final byte[] pageToWrite = new byte[PAGE_SIZE];
+
+            CommandFactory.createWriteCommand(0, 0, pageToWrite)
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult1 =
                     WriteCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(WriteCommandResult.Type.ACK, writeCommandResult1.getType());
 
-            CommandFactory.createWriteCommand(0, 1, "abc".getBytes(Charset.forName("UTF-8")))
+            CommandFactory.createWriteCommand(0, 1, pageToWrite)
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult2 =
                     WriteCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(WriteCommandResult.Type.ACK, writeCommandResult2.getType());
 
-            CommandFactory.createWriteCommand(0, 3, "abc".getBytes(Charset.forName("UTF-8")))
+            CommandFactory.createWriteCommand(0, 1234, pageToWrite)
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult3 =
                     WriteCommandResult.parseDelimitedFrom(is);
@@ -38,7 +40,7 @@ public class SealTest extends WithServerConnection {
             final SealCommandResult sealCommandResult =
                     SealCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(SealCommandResult.Type.ACK, sealCommandResult.getType());
-            Assert.assertEquals(3, sealCommandResult.getHighestAddress());
+            Assert.assertEquals(1234, sealCommandResult.getHighestPageNumber());
         }
     }
 }

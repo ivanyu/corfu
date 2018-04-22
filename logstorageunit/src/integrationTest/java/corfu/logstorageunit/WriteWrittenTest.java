@@ -14,8 +14,10 @@ public class WriteWrittenTest extends WithServerConnection {
     public void notAllowToWriteWritten() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
+            final byte[] pageToWrite = new byte[PAGE_SIZE];
+
             final Protocol.CommandWrapper writeCommand =
-                    CommandFactory.createWriteCommand(0, 1234, "abc".getBytes(Charset.forName("UTF-8")));
+                    CommandFactory.createWriteCommand(0, 1234, pageToWrite);
 
             writeCommand.writeDelimitedTo(os);
             final WriteCommandResult commandResult1 =

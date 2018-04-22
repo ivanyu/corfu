@@ -12,17 +12,19 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-final class LogStorageServer extends Thread {
+final class LogStorageUnitServer extends Thread {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private volatile boolean started = false;
     private final int port;
     private volatile int actualPort = -1;
 
-    private final LogStorage logStorage = new LogStorage();
+    private final LogStorageUnit logStorageUnit;
 
-    LogStorageServer(final int port) {
+    LogStorageUnitServer(final int port,
+                         final LogStorageUnit logStorageUnit) {
         this.port = port;
+        this.logStorageUnit = logStorageUnit;
     }
 
     @Override
@@ -54,7 +56,7 @@ final class LogStorageServer extends Thread {
                 }
                 logger.debug("Client sent command {}", commandWrapper);
 
-                final MessageLite result = logStorage.processCommand(commandWrapper);
+                final MessageLite result = logStorageUnit.processCommand(commandWrapper);
                 result.writeDelimitedTo(outputStream);
             }
         } catch (Exception e) {
