@@ -9,4 +9,4 @@
 
 rootProject.name = 'corfu'
 
-include 'logstorageunit'
+include 'logstorageunit', 'server'

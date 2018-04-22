@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'idea'
+    id 'org.unbroken-dome.test-sets' version '1.4.5'
+    id 'com.google.protobuf' version '0.8.5'
+    id 'findbugs'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+mainClassName = 'corfu.server.Server'
+
+dependencies {
+    compile "ch.qos.logback:logback-classic:1.2.3"
+    compile 'com.google.guava:guava:23.0'
+    compile 'com.google.protobuf:protobuf-java:3.5.1'
+    testCompile 'junit:junit:4.12'
+}
+
+protobuf {
+    // Configure the protoc executable
+    protoc {
+        // Download from repositories
+        artifact = 'com.google.protobuf:protoc:3.5.1-1'
+    }
+}
+
+sourceSets {
+    main {
+        proto {
+            srcDir '../logstorageunitprotocol/src/main/proto'
+        }
+    }
+}
+
+tasks.withType(FindBugs) {
+    ignoreFailures = true
+    excludeFilter = file("$projectDir/findbugs-exclude.xml")
+}
+
+testSets {
+    integrationTest
+}
+
+integrationTest {
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+        showStandardStreams = true
+    }
+    maxParallelForks = 1
+}
