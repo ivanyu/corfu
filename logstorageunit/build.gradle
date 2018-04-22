@@ -27,6 +27,14 @@ protobuf {
     }
 }
 
+sourceSets {
+    main {
+        proto {
+            srcDir '../logstorageunitprotocol/src/main/proto'
+        }
+    }
+}
+
 tasks.withType(FindBugs) {
     ignoreFailures = true
     excludeFilter = file("$projectDir/findbugs-exclude.xml")
