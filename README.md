@@ -2,3 +2,7 @@
 
 # corfu
 Experiments around Corfu and vCorfu
+
+## Papers
+
+[Papers by Corfu authors](https://github.com/CorfuDB/CorfuDB/wiki/White-papers)
