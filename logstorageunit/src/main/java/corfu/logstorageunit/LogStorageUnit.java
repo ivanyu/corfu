@@ -4,17 +4,12 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageLite;
 import corfu.logstorageunit.Protocol.*;
 
-import java.util.HashMap;
-import java.util.HashSet;
-
 class LogStorageUnit {
     private final int pageSize;
     private final PhysicalStorage physicalStorage;
+    private final LogicalPageMapper logicalPageMapper = new LogicalPageMapper();
 
     private int serverEpoch = 0;
-    private HashMap<Long, Integer> pageMap = new HashMap<>();
-    private HashSet<Long> deletedLogicalPages = new HashSet<>();
-    private long highestWrittenLogicalPageNumber = -1;
 
     LogStorageUnit(final int pageSize, final int pageCount) {
         this.pageSize = pageSize;
@@ -46,19 +41,19 @@ class LogStorageUnit {
                     .build();
         }
 
-        if (isPageDeleted(command.getPageNumber())) {
+        if (logicalPageMapper.isPageDeleted(command.getPageNumber())) {
             return ReadCommandResult.newBuilder()
                     .setType(ReadCommandResult.Type.ERR_DELETED)
                     .build();
         }
 
-        if (!isPageWritten(command.getPageNumber())) {
+        if (!logicalPageMapper.isPageWritten(command.getPageNumber())) {
             return ReadCommandResult.newBuilder()
                     .setType(ReadCommandResult.Type.ERR_UNWRITTEN)
                     .build();
         }
 
-        final int physicalPageNumber = pageMap.get(command.getPageNumber());
+        final int physicalPageNumber = logicalPageMapper.getPhysicalPageNumber(command.getPageNumber());
         final ByteString content = physicalStorage.readPage(physicalPageNumber);
 
         return ReadCommandResult.newBuilder()
@@ -80,13 +75,13 @@ class LogStorageUnit {
                     .build();
         }
 
-        if (isPageDeleted(command.getPageNumber())) {
+        if (logicalPageMapper.isPageDeleted(command.getPageNumber())) {
             return WriteCommandResult.newBuilder()
                     .setType(WriteCommandResult.Type.ERR_DELETED)
                     .build();
         }
 
-        if (isPageWritten(command.getPageNumber())) {
+        if (logicalPageMapper.isPageWritten(command.getPageNumber())) {
             return WriteCommandResult.newBuilder()
                     .setType(WriteCommandResult.Type.ERR_WRITTEN)
                     .build();
@@ -99,11 +94,7 @@ class LogStorageUnit {
                     .build();
         }
 
-        highestWrittenLogicalPageNumber = Math.max(
-                highestWrittenLogicalPageNumber, command.getPageNumber());
-
-        pageMap.put(command.getPageNumber(), physicalPageToWrite);
-
+        logicalPageMapper.saveMapping(command.getPageNumber(), physicalPageToWrite);
         physicalStorage.writePage(physicalPageToWrite, command.getContent());
 
         return WriteCommandResult.newBuilder()
@@ -119,22 +110,13 @@ class LogStorageUnit {
         return command.getContent().size() == pageSize;
     }
 
-    private boolean isPageDeleted(final long pageNumber) {
-        return deletedLogicalPages.contains(pageNumber);
-    }
-
-    private boolean isPageWritten(final long pageNumber) {
-        return pageMap.containsKey(pageNumber);
-    }
-
     private DeleteCommandResult processDeleteCommand(final CommandWrapper.DeleteCommand command) {
         // TODO not allow to delete unwritten?
 
-        final Integer physicalPageNumber = pageMap.remove(command.getAddress());
-        if (physicalPageNumber != null) {
+        final int physicalPageNumber = logicalPageMapper.removeMapping(command.getAddress());
+        if (physicalPageNumber != -1) {
             physicalStorage.deletePage(physicalPageNumber);
         }
-        deletedLogicalPages.add(command.getAddress());
 
         return DeleteCommandResult.newBuilder()
                 .setType(DeleteCommandResult.Type.ACK)
@@ -146,7 +128,7 @@ class LogStorageUnit {
             serverEpoch = command.getEpoch();
             return SealCommandResult.newBuilder()
                     .setType(SealCommandResult.Type.ACK)
-                    .setHighestPageNumber(highestWrittenLogicalPageNumber)
+                    .setHighestPageNumber(logicalPageMapper.getHighestWrittenLogicalPageNumber())
                     .build();
         } else {
             return SealCommandResult.newBuilder()
