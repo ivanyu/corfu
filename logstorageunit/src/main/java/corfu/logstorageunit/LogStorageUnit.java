@@ -1,29 +1,24 @@
 package corfu.logstorageunit;
 
+import com.google.protobuf.ByteString;
+import com.google.protobuf.MessageLite;
+import corfu.logstorageunit.Protocol.*;
+
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.MessageLite;
-
-import corfu.logstorageunit.Protocol.*;
-
 class LogStorageUnit {
-
     private final int pageSize;
-    private final int pageCount;
-    private byte[] flash;
+    private final PhysicalStorage physicalStorage;
 
     private int serverEpoch = 0;
     private HashMap<Long, Integer> pageMap = new HashMap<>();
-    private HashSet<Long> deletedPages = new HashSet<>();
+    private HashSet<Long> deletedLogicalPages = new HashSet<>();
     private long highestWrittenLogicalPageNumber = -1;
-    private int highestWrittenPhysicalPageNumber = -1;
 
     LogStorageUnit(final int pageSize, final int pageCount) {
         this.pageSize = pageSize;
-        this.pageCount = pageCount;
-        this.flash = new byte[pageSize * pageCount];
+        this.physicalStorage = new PhysicalStorage(pageSize, pageCount);
     }
 
     MessageLite processCommand(final CommandWrapper commandWrapper) {
@@ -64,8 +59,7 @@ class LogStorageUnit {
         }
 
         final int physicalPageNumber = pageMap.get(command.getPageNumber());
-        final int physicalAddress = physicalPageNumber * pageSize;
-        final ByteString content = ByteString.copyFrom(flash, physicalAddress, pageSize);
+        final ByteString content = physicalStorage.readPage(physicalPageNumber);
 
         return ReadCommandResult.newBuilder()
                 .setType(ReadCommandResult.Type.ACK)
@@ -98,7 +92,8 @@ class LogStorageUnit {
                     .build();
         }
 
-        if (canWriteOneMorePage()) {
+        final int physicalPageToWrite = physicalStorage.getAvailablePageNumber();
+        if (physicalPageToWrite == -1) {
             return WriteCommandResult.newBuilder()
                     .setType(WriteCommandResult.Type.ERR_NO_FREE_PAGE)
                     .build();
@@ -107,11 +102,9 @@ class LogStorageUnit {
         highestWrittenLogicalPageNumber = Math.max(
                 highestWrittenLogicalPageNumber, command.getPageNumber());
 
-        highestWrittenPhysicalPageNumber += 1;
-        final int newPhysicalAddress = highestWrittenPhysicalPageNumber * pageSize;
-        pageMap.put(command.getPageNumber(), newPhysicalAddress);
+        pageMap.put(command.getPageNumber(), physicalPageToWrite);
 
-        command.getContent().copyTo(flash, newPhysicalAddress);
+        physicalStorage.writePage(physicalPageToWrite, command.getContent());
 
         return WriteCommandResult.newBuilder()
                 .setType(WriteCommandResult.Type.ACK)
@@ -127,20 +120,21 @@ class LogStorageUnit {
     }
 
     private boolean isPageDeleted(final long pageNumber) {
-        return deletedPages.contains(pageNumber);
+        return deletedLogicalPages.contains(pageNumber);
     }
 
     private boolean isPageWritten(final long pageNumber) {
         return pageMap.containsKey(pageNumber);
     }
 
-    private boolean canWriteOneMorePage() {
-        return highestWrittenPhysicalPageNumber + 1 >= pageCount;
-    }
-
     private DeleteCommandResult processDeleteCommand(final CommandWrapper.DeleteCommand command) {
-        deletedPages.add(command.getAddress());
-        pageMap.remove(command.getAddress());
+        // TODO not allow to delete unwritten?
+
+        final Integer physicalPageNumber = pageMap.remove(command.getAddress());
+        if (physicalPageNumber != null) {
+            physicalStorage.deletePage(physicalPageNumber);
+        }
+        deletedLogicalPages.add(command.getAddress());
 
         return DeleteCommandResult.newBuilder()
                 .setType(DeleteCommandResult.Type.ACK)
