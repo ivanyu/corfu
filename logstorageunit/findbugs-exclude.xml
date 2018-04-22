@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<FindBugsFilter>
+    <!-- Protobuf generated -->
+    <Match>
+        <Class name="~^corfu.logstorageunit.Protocol.*" />
+    </Match>
+</FindBugsFilter>

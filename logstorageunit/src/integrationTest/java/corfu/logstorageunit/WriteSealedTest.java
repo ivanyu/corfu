@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 public class WriteSealedTest extends WithServerConnection {
     @Test(timeout = 300)
@@ -20,7 +21,7 @@ public class WriteSealedTest extends WithServerConnection {
                     SealCommandResult.parseDelimitedFrom(is);
             Assert.assertEquals(SealCommandResult.Type.ACK, sealCommandResult.getType());
 
-            CommandFactory.createWriteCommand(0, 1234, "abc".getBytes())
+            CommandFactory.createWriteCommand(0, 1234, "abc".getBytes(Charset.forName("UTF-8")))
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult =
                     WriteCommandResult.parseDelimitedFrom(is);

@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 public class ReadAfterWriteTest extends WithServerConnection {
     @Test(timeout = 300)
@@ -14,7 +15,7 @@ public class ReadAfterWriteTest extends WithServerConnection {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
 
-            CommandFactory.createWriteCommand(0, 1234, "abc".getBytes())
+            CommandFactory.createWriteCommand(0, 1234, "abc".getBytes(Charset.forName("UTF-8")))
                     .writeDelimitedTo(os);
             final WriteCommandResult writeCommandResult =
                     WriteCommandResult.parseDelimitedFrom(is);

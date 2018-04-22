@@ -4,6 +4,7 @@ plugins {
     id 'idea'
     id 'org.unbroken-dome.test-sets' version '1.4.5'
     id 'com.google.protobuf' version '0.8.5'
+    id 'findbugs'
 }
 
 sourceCompatibility = 1.8
@@ -24,6 +25,11 @@ protobuf {
         // Download from repositories
         artifact = 'com.google.protobuf:protoc:3.5.1-1'
     }
+}
+
+tasks.withType(FindBugs) {
+    ignoreFailures = true
+    excludeFilter = file("$projectDir/findbugs-exclude.xml")
 }
 
 testSets {
