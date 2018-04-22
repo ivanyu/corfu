@@ -3,6 +3,7 @@ package corfu.logstorageunit;
 import com.google.protobuf.MessageLite;
 import corfu.logstorageunit.Protocol.CommandWrapper;
 import corfu.logstorageunit.protocol.CommandParser;
+import corfu.logstorageunit.unit.LogStorageUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

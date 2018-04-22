@@ -15,7 +15,7 @@ message CommandWrapper {
     }
 
     message DeleteCommand {
-        uint64 address = 1;
+        uint64 pageNumber = 1;
     }
 
     message SealCommand {

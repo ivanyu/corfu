@@ -29,10 +29,10 @@ public final class CommandFactory {
                 .build();
     }
 
-    public static CommandWrapper createDeleteCommand(final long address) {
+    public static CommandWrapper createDeleteCommand(final long pageNumber) {
         final CommandWrapper.DeleteCommand deleteCommand =
                 CommandWrapper.DeleteCommand.newBuilder()
-                        .setAddress(address)
+                        .setPageNumber(pageNumber)
                         .build();
         return CommandWrapper.newBuilder()
                 .setDelete(deleteCommand)

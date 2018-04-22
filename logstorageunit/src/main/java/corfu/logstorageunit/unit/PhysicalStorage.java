@@ -1,4 +1,4 @@
-package corfu.logstorageunit;
+package corfu.logstorageunit.unit;
 
 import com.google.protobuf.ByteString;
 

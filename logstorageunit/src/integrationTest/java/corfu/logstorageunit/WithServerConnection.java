@@ -1,5 +1,8 @@
 package corfu.logstorageunit;
 
+import corfu.logstorageunit.unit.ConcurrencyProtector;
+import corfu.logstorageunit.unit.LogStorageUnit;
+import corfu.logstorageunit.unit.EmptyConcurrencyProtector;
 import org.junit.After;
 import org.junit.Before;
 
@@ -15,7 +18,9 @@ class WithServerConnection {
 
     @Before
     public void before() throws Exception {
-        final LogStorageUnit logStorageUnit = new LogStorageUnit(PAGE_SIZE, PAGE_COUNT);
+        final ConcurrencyProtector lockMechanism = new EmptyConcurrencyProtector();
+        final LogStorageUnit logStorageUnit =
+                new LogStorageUnit(PAGE_SIZE, PAGE_COUNT, lockMechanism);
         server = new LogStorageUnitServer(0, logStorageUnit);
         server.start();
 
