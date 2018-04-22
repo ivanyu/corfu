@@ -9,7 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class FreedPageUtilizationTest extends WithServerConnection {
-    @Test(timeout = 300)
+    @Test(timeout = 2000)
     public void allowToWriteMoreThatPageCountAfterDelete() throws Exception {
         try (final OutputStream os = clientSocket.getOutputStream();
              final InputStream is = clientSocket.getInputStream()) {
