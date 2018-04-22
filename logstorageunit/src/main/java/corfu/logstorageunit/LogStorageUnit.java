@@ -1,10 +1,12 @@
 package corfu.logstorageunit;
 
+import java.util.HashMap;
+import java.util.HashSet;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageLite;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import corfu.logstorageunit.Protocol.*;
 
 class LogStorageUnit {
 
@@ -24,7 +26,7 @@ class LogStorageUnit {
         this.flash = new byte[pageSize * pageCount];
     }
 
-    MessageLite processCommand(final Protocol.CommandWrapper commandWrapper) {
+    MessageLite processCommand(final CommandWrapper commandWrapper) {
         switch (commandWrapper.getCommandCase()) {
             case READ:
                 return processReadCommand(commandWrapper.getRead());
@@ -42,22 +44,22 @@ class LogStorageUnit {
         return null;
     }
 
-    private Protocol.ReadCommandResult processReadCommand(final Protocol.CommandWrapper.ReadCommand command) {
-        if (serverEpoch > command.getEpoch()) {
-            return Protocol.ReadCommandResult.newBuilder()
-                    .setType(Protocol.ReadCommandResult.Type.ERR_SEALED)
+    private ReadCommandResult processReadCommand(final CommandWrapper.ReadCommand command) {
+        if (isPastEpoch(command.getEpoch())) {
+            return ReadCommandResult.newBuilder()
+                    .setType(ReadCommandResult.Type.ERR_SEALED)
                     .build();
         }
 
-        if (deletedPages.contains(command.getPageNumber())) {
-            return Protocol.ReadCommandResult.newBuilder()
-                    .setType(Protocol.ReadCommandResult.Type.ERR_DELETED)
+        if (isPageDeleted(command.getPageNumber())) {
+            return ReadCommandResult.newBuilder()
+                    .setType(ReadCommandResult.Type.ERR_DELETED)
                     .build();
         }
 
-        if (!pageMap.containsKey(command.getPageNumber())) {
-            return Protocol.ReadCommandResult.newBuilder()
-                    .setType(Protocol.ReadCommandResult.Type.ERR_UNWRITTEN)
+        if (!isPageWritten(command.getPageNumber())) {
+            return ReadCommandResult.newBuilder()
+                    .setType(ReadCommandResult.Type.ERR_UNWRITTEN)
                     .build();
         }
 
@@ -65,40 +67,40 @@ class LogStorageUnit {
         final int physicalAddress = physicalPageNumber * pageSize;
         final ByteString content = ByteString.copyFrom(flash, physicalAddress, pageSize);
 
-        return Protocol.ReadCommandResult.newBuilder()
-                .setType(Protocol.ReadCommandResult.Type.ACK)
+        return ReadCommandResult.newBuilder()
+                .setType(ReadCommandResult.Type.ACK)
                 .setContent(content)
                 .build();
     }
 
-    private Protocol.WriteCommandResult processWriteCommand(final Protocol.CommandWrapper.WriteCommand command) {
-        if (command.getContent().size() != pageSize) {
-            return Protocol.WriteCommandResult.newBuilder()
-                    .setType(Protocol.WriteCommandResult.Type.ERR_CONTENT_SIZE)
+    private WriteCommandResult processWriteCommand(final CommandWrapper.WriteCommand command) {
+        if (!isCorrectContentSize(command)) {
+            return WriteCommandResult.newBuilder()
+                    .setType(WriteCommandResult.Type.ERR_CONTENT_SIZE)
                     .build();
         }
 
-        if (serverEpoch > command.getEpoch()) {
-            return Protocol.WriteCommandResult.newBuilder()
-                    .setType(Protocol.WriteCommandResult.Type.ERR_SEALED)
+        if (isPastEpoch(command.getEpoch())) {
+            return WriteCommandResult.newBuilder()
+                    .setType(WriteCommandResult.Type.ERR_SEALED)
                     .build();
         }
 
-        if (deletedPages.contains(command.getPageNumber())) {
-            return Protocol.WriteCommandResult.newBuilder()
-                    .setType(Protocol.WriteCommandResult.Type.ERR_DELETED)
+        if (isPageDeleted(command.getPageNumber())) {
+            return WriteCommandResult.newBuilder()
+                    .setType(WriteCommandResult.Type.ERR_DELETED)
                     .build();
         }
 
-        if (pageMap.containsKey(command.getPageNumber())) {
-            return Protocol.WriteCommandResult.newBuilder()
-                    .setType(Protocol.WriteCommandResult.Type.ERR_WRITTEN)
+        if (isPageWritten(command.getPageNumber())) {
+            return WriteCommandResult.newBuilder()
+                    .setType(WriteCommandResult.Type.ERR_WRITTEN)
                     .build();
         }
 
-        if (highestWrittenPhysicalPageNumber + 1 >= pageCount) {
-            return Protocol.WriteCommandResult.newBuilder()
-                    .setType(Protocol.WriteCommandResult.Type.ERR_NO_FREE_PAGE)
+        if (canWriteOneMorePage()) {
+            return WriteCommandResult.newBuilder()
+                    .setType(WriteCommandResult.Type.ERR_NO_FREE_PAGE)
                     .build();
         }
 
@@ -111,29 +113,50 @@ class LogStorageUnit {
 
         command.getContent().copyTo(flash, newPhysicalAddress);
 
-        return Protocol.WriteCommandResult.newBuilder()
-                .setType(Protocol.WriteCommandResult.Type.ACK)
+        return WriteCommandResult.newBuilder()
+                .setType(WriteCommandResult.Type.ACK)
                 .build();
     }
 
-    private Protocol.DeleteCommandResult processDeleteCommand(final Protocol.CommandWrapper.DeleteCommand command) {
+    private boolean isPastEpoch(final int commandEpoch) {
+        return commandEpoch < serverEpoch;
+    }
+
+    private boolean isCorrectContentSize(final CommandWrapper.WriteCommand command) {
+        return command.getContent().size() == pageSize;
+    }
+
+    private boolean isPageDeleted(final long pageNumber) {
+        return deletedPages.contains(pageNumber);
+    }
+
+    private boolean isPageWritten(final long pageNumber) {
+        return pageMap.containsKey(pageNumber);
+    }
+
+    private boolean canWriteOneMorePage() {
+        return highestWrittenPhysicalPageNumber + 1 >= pageCount;
+    }
+
+    private DeleteCommandResult processDeleteCommand(final CommandWrapper.DeleteCommand command) {
         deletedPages.add(command.getAddress());
+        pageMap.remove(command.getAddress());
 
-        return Protocol.DeleteCommandResult.newBuilder()
-                .setType(Protocol.DeleteCommandResult.Type.ACK)
+        return DeleteCommandResult.newBuilder()
+                .setType(DeleteCommandResult.Type.ACK)
                 .build();
     }
 
-    private Protocol.SealCommandResult processSealCommand(final Protocol.CommandWrapper.SealCommand command) {
+    private SealCommandResult processSealCommand(final CommandWrapper.SealCommand command) {
         if (command.getEpoch() > serverEpoch) {
             serverEpoch = command.getEpoch();
-            return Protocol.SealCommandResult.newBuilder()
-                    .setType(Protocol.SealCommandResult.Type.ACK)
+            return SealCommandResult.newBuilder()
+                    .setType(SealCommandResult.Type.ACK)
                     .setHighestPageNumber(highestWrittenLogicalPageNumber)
                     .build();
         } else {
-            return Protocol.SealCommandResult.newBuilder()
-                    .setType(Protocol.SealCommandResult.Type.ERR_SEALED)
+            return SealCommandResult.newBuilder()
+                    .setType(SealCommandResult.Type.ERR_SEALED)
                     .build();
         }
     }
