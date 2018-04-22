@@ -11,6 +11,33 @@ class LogStorageUnit {
 
     private int serverEpoch = 0;
 
+    private static ReadCommandResult READ_RESULT_ERR_SEALED =
+            ReadCommandResult.newBuilder().setType(ReadCommandResult.Type.ERR_SEALED).build();
+    private static ReadCommandResult READ_RESULT_ERR_DELETED =
+            ReadCommandResult.newBuilder().setType(ReadCommandResult.Type.ERR_DELETED).build();
+    private static ReadCommandResult READ_RESULT_ERR_UNWRITTEN =
+            ReadCommandResult.newBuilder().setType(ReadCommandResult.Type.ERR_UNWRITTEN).build();
+
+    private static WriteCommandResult WRITE_RESULT_ACK =
+            WriteCommandResult.newBuilder().setType(WriteCommandResult.Type.ACK).build();
+    private static WriteCommandResult WRITE_RESULT_ERR_CONTENT_SIZE =
+            WriteCommandResult.newBuilder().setType(WriteCommandResult.Type.ERR_CONTENT_SIZE).build();
+    private static WriteCommandResult WRITE_RESULT_ERR_SEALED =
+            WriteCommandResult.newBuilder().setType(WriteCommandResult.Type.ERR_SEALED).build();
+    private static WriteCommandResult WRITE_RESULT_ERR_DELETED =
+            WriteCommandResult.newBuilder().setType(WriteCommandResult.Type.ERR_DELETED).build();
+    private static WriteCommandResult WRITE_RESULT_ERR_WRITTEN =
+            WriteCommandResult.newBuilder().setType(WriteCommandResult.Type.ERR_WRITTEN).build();
+    private static WriteCommandResult WRITE_RESULT_ERR_NO_FREE_PAGE =
+            WriteCommandResult.newBuilder().setType(WriteCommandResult.Type.ERR_NO_FREE_PAGE).build();
+
+    private static DeleteCommandResult DELETE_RESULT_ACK =
+            DeleteCommandResult.newBuilder().setType(DeleteCommandResult.Type.ACK).build();
+
+    private static SealCommandResult SEAL_RESULT_ERR_SEALED =
+            SealCommandResult.newBuilder().setType(SealCommandResult.Type.ERR_SEALED).build();
+
+
     LogStorageUnit(final int pageSize, final int pageCount) {
         this.pageSize = pageSize;
         this.physicalStorage = new PhysicalStorage(pageSize, pageCount);
@@ -36,21 +63,13 @@ class LogStorageUnit {
 
     private ReadCommandResult processReadCommand(final CommandWrapper.ReadCommand command) {
         if (isPastEpoch(command.getEpoch())) {
-            return ReadCommandResult.newBuilder()
-                    .setType(ReadCommandResult.Type.ERR_SEALED)
-                    .build();
+            return READ_RESULT_ERR_SEALED;
         }
-
         if (logicalPageMapper.isPageDeleted(command.getPageNumber())) {
-            return ReadCommandResult.newBuilder()
-                    .setType(ReadCommandResult.Type.ERR_DELETED)
-                    .build();
+            return READ_RESULT_ERR_DELETED;
         }
-
         if (!logicalPageMapper.isPageWritten(command.getPageNumber())) {
-            return ReadCommandResult.newBuilder()
-                    .setType(ReadCommandResult.Type.ERR_UNWRITTEN)
-                    .build();
+            return READ_RESULT_ERR_UNWRITTEN;
         }
 
         final int physicalPageNumber = logicalPageMapper.getPhysicalPageNumber(command.getPageNumber());
@@ -64,42 +83,27 @@ class LogStorageUnit {
 
     private WriteCommandResult processWriteCommand(final CommandWrapper.WriteCommand command) {
         if (!isCorrectContentSize(command)) {
-            return WriteCommandResult.newBuilder()
-                    .setType(WriteCommandResult.Type.ERR_CONTENT_SIZE)
-                    .build();
+            return WRITE_RESULT_ERR_CONTENT_SIZE;
         }
-
         if (isPastEpoch(command.getEpoch())) {
-            return WriteCommandResult.newBuilder()
-                    .setType(WriteCommandResult.Type.ERR_SEALED)
-                    .build();
+            return WRITE_RESULT_ERR_SEALED;
         }
-
         if (logicalPageMapper.isPageDeleted(command.getPageNumber())) {
-            return WriteCommandResult.newBuilder()
-                    .setType(WriteCommandResult.Type.ERR_DELETED)
-                    .build();
+            return WRITE_RESULT_ERR_DELETED;
         }
-
         if (logicalPageMapper.isPageWritten(command.getPageNumber())) {
-            return WriteCommandResult.newBuilder()
-                    .setType(WriteCommandResult.Type.ERR_WRITTEN)
-                    .build();
+            return WRITE_RESULT_ERR_WRITTEN;
         }
 
         final int physicalPageToWrite = physicalStorage.getAvailablePageNumber();
         if (physicalPageToWrite == -1) {
-            return WriteCommandResult.newBuilder()
-                    .setType(WriteCommandResult.Type.ERR_NO_FREE_PAGE)
-                    .build();
+            return WRITE_RESULT_ERR_NO_FREE_PAGE;
         }
 
         logicalPageMapper.saveMapping(command.getPageNumber(), physicalPageToWrite);
         physicalStorage.writePage(physicalPageToWrite, command.getContent());
 
-        return WriteCommandResult.newBuilder()
-                .setType(WriteCommandResult.Type.ACK)
-                .build();
+        return WRITE_RESULT_ACK;
     }
 
     private boolean isPastEpoch(final int commandEpoch) {
@@ -117,10 +121,7 @@ class LogStorageUnit {
         if (physicalPageNumber != -1) {
             physicalStorage.deletePage(physicalPageNumber);
         }
-
-        return DeleteCommandResult.newBuilder()
-                .setType(DeleteCommandResult.Type.ACK)
-                .build();
+        return DELETE_RESULT_ACK;
     }
 
     private SealCommandResult processSealCommand(final CommandWrapper.SealCommand command) {
@@ -131,9 +132,7 @@ class LogStorageUnit {
                     .setHighestPageNumber(logicalPageMapper.getHighestWrittenLogicalPageNumber())
                     .build();
         } else {
-            return SealCommandResult.newBuilder()
-                    .setType(SealCommandResult.Type.ERR_SEALED)
-                    .build();
+            return SEAL_RESULT_ERR_SEALED;
         }
     }
 }
