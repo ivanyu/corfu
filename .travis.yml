@@ -4,4 +4,4 @@ jdk:
 
 script:
   - ./gradlew test
-  - ./gradlew integrationTest
+  - ./gradlew integrationTest -i
