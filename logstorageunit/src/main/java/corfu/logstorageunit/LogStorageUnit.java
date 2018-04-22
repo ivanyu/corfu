@@ -16,7 +16,7 @@ class LogStorageUnit {
     private HashMap<Long, Integer> pageMap = new HashMap<>();
     private HashSet<Long> deletedPages = new HashSet<>();
     private long highestWrittenLogicalPageNumber = -1;
-    private int highestWrittenPhysicalNumber = -1;
+    private int highestWrittenPhysicalPageNumber = -1;
 
     LogStorageUnit(final int pageSize, final int pageCount) {
         this.pageSize = pageSize;
@@ -96,11 +96,17 @@ class LogStorageUnit {
                     .build();
         }
 
+        if (highestWrittenPhysicalPageNumber + 1 >= pageCount) {
+            return Protocol.WriteCommandResult.newBuilder()
+                    .setType(Protocol.WriteCommandResult.Type.ERR_NO_FREE_PAGE)
+                    .build();
+        }
+
         highestWrittenLogicalPageNumber = Math.max(
                 highestWrittenLogicalPageNumber, command.getPageNumber());
 
-        highestWrittenPhysicalNumber += 1;
-        final int newPhysicalAddress = highestWrittenPhysicalNumber * pageSize;
+        highestWrittenPhysicalPageNumber += 1;
+        final int newPhysicalAddress = highestWrittenPhysicalPageNumber * pageSize;
         pageMap.put(command.getPageNumber(), newPhysicalAddress);
 
         command.getContent().copyTo(flash, newPhysicalAddress);

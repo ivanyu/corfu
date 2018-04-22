@@ -45,10 +45,11 @@ message ReadCommandResult {
 message WriteCommandResult {
     enum Type {
         ACK = 0;
-        ERR_CONTENT_SIZE = 1;
-        ERR_WRITTEN = 2;
-        ERR_DELETED = 3;
-        ERR_SEALED = 4;
+        ERR_WRITTEN = 1;
+        ERR_DELETED = 2;
+        ERR_SEALED = 3;
+        ERR_CONTENT_SIZE = 4;
+        ERR_NO_FREE_PAGE = 5;
     }
 
     Type type = 1;
