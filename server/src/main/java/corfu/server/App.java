@@ -2,7 +2,7 @@ package corfu.server;
 
 import com.google.common.base.Charsets;
 import com.google.protobuf.ByteString;
-import corfu.logstorageunit.Protocol.*;
+import corfu.storageunit.Protocol.*;
 import corfu.server.protocol.CommandFactory;
 
 import java.io.IOException;

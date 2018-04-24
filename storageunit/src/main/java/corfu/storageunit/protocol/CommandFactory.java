@@ -1,4 +1,4 @@
-package corfu.server.protocol;
+package corfu.storageunit.protocol;
 
 import com.google.protobuf.ByteString;
 import corfu.storageunit.Protocol.CommandWrapper;

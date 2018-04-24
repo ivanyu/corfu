@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+option java_package = "corfu.storageunit";
+
+message CommandWrapper {
+    message ReadCommand {
+        uint32 epoch = 1;
+        uint64 pageNumber = 2;
+    }
+
+    message WriteCommand {
+        uint32 epoch = 1;
+        uint64 pageNumber = 2;
+        bytes content = 3;
+    }
+
+    message DeleteCommand {
+        uint64 pageNumber = 1;
+    }
+
+    message SealCommand {
+        uint32 epoch = 1;
+    }
+
+    oneof command {
+        ReadCommand read = 1;
+        WriteCommand write = 2;
+        DeleteCommand delete = 3;
+        SealCommand seal = 4;
+    }
+}
+
+message ReadCommandResult {
+    enum Type {
+        ACK = 0;
+        ERR_UNWRITTEN = 1;
+        ERR_DELETED = 2;
+        ERR_SEALED = 3;
+    }
+
+    Type type = 1;
+    bytes content = 2;
+}
+
+message WriteCommandResult {
+    enum Type {
+        ACK = 0;
+        ERR_WRITTEN = 1;
+        ERR_DELETED = 2;
+        ERR_SEALED = 3;
+        ERR_CONTENT_SIZE = 4;
+        ERR_NO_FREE_PAGE = 5;
+    }
+
+    Type type = 1;
+}
+
+message DeleteCommandResult {
+    enum Type {
+        ACK = 0;
+    }
+
+    Type type = 1;
+}
+
+message SealCommandResult {
+    enum Type {
+        ACK = 0;
+        ERR_SEALED = 1;
+    }
+
+    Type type = 1;
+    uint64 highestPageNumber = 3;
+}
