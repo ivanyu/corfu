@@ -1,5 +1,6 @@
 package corfu.storageunit;
 
+import com.codahale.metrics.MetricRegistry;
 import corfu.storageunit.unit.ConcurrencyProtector;
 import corfu.storageunit.unit.StorageUnit;
 import corfu.storageunit.unit.EmptyConcurrencyProtector;
@@ -19,8 +20,9 @@ class WithServerConnection {
     @Before
     public void before() throws Exception {
         final ConcurrencyProtector lockMechanism = new EmptyConcurrencyProtector();
+        final MetricRegistry metricRegistry = new MetricRegistry();
         final StorageUnit storageUnit =
-                new StorageUnit(PAGE_SIZE, PAGE_COUNT, lockMechanism);
+                new StorageUnit(PAGE_SIZE, PAGE_COUNT, lockMechanism, metricRegistry);
         server = new StorageUnitServer(0, storageUnit);
         server.start();
 

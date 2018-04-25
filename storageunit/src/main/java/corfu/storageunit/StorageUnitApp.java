@@ -3,6 +3,8 @@ package corfu.storageunit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jmx.JmxReporter;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
@@ -12,8 +14,8 @@ import corfu.storageunit.unit.ConcurrencyProtector;
 import corfu.storageunit.unit.StorageUnit;
 import corfu.storageunit.unit.RWLockConcurrencyProtector;
 
-public class App {
-    private static Logger logger = LoggerFactory.getLogger(App.class);
+public class StorageUnitApp {
+    private static Logger logger = LoggerFactory.getLogger(StorageUnitApp.class);
 
     public static void main(final String[] args) throws InterruptedException, InvalidProtocolBufferException {
         final Options options = new Options();
@@ -147,9 +149,14 @@ public class App {
                                        final int pageCount) throws InterruptedException {
         logger.info("Running with page {} pages by {} bytes, on port {}", pageCount, pageSize, port);
 
+        final MetricRegistry metricRegistry = new MetricRegistry();
+
+        final JmxReporter reporter = JmxReporter.forRegistry(metricRegistry).build();
+        reporter.start();
+
         final ConcurrencyProtector lockMechanism = createConcurrencyProtector(pageCount);
         final StorageUnit storageUnit = new StorageUnit(
-                pageSize, pageCount, lockMechanism);
+                pageSize, pageCount, lockMechanism, metricRegistry);
 
         final Thread serverThread = new StorageUnitServer(port, storageUnit);
         serverThread.start();
@@ -160,5 +167,6 @@ public class App {
         int addressSpaceBuckets = (int) Math.ceil(pageCount / 16.0);
         logger.debug("{} address space buckets", addressSpaceBuckets);
         return new RWLockConcurrencyProtector(addressSpaceBuckets);
+//        return new EmptyConcurrencyProtector();
     }
 }

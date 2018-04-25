@@ -1,5 +1,7 @@
 package corfu.storageunit.unit;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageLite;
 import corfu.storageunit.Protocol.*;
@@ -39,30 +41,49 @@ public class StorageUnit {
     private static SealCommandResult SEAL_RESULT_ERR_SEALED =
             SealCommandResult.newBuilder().setType(SealCommandResult.Type.ERR_SEALED).build();
 
+    private final Timer readCommandTimer;
+    private final Timer writeCommandTimer;
+    private final Timer deleteCommandTimer;
+    private final Timer sealCommandTimer;
 
-    public StorageUnit(final int pageSize, final int pageCount, final ConcurrencyProtector lockMechanism) {
+    public StorageUnit(final int pageSize, final int pageCount,
+                       final ConcurrencyProtector lockMechanism,
+                       final MetricRegistry metricRegistry) {
         this.pageSize = pageSize;
         this.physicalStorage = new PhysicalStorage(pageSize, pageCount);
         this.lockMechanism = lockMechanism;
+
+        readCommandTimer = metricRegistry.timer("command.read");
+        writeCommandTimer = metricRegistry.timer("command.write");
+        deleteCommandTimer = metricRegistry.timer("command.delete");
+        sealCommandTimer = metricRegistry.timer("command.seal");
     }
 
     public MessageLite processCommand(final CommandWrapper commandWrapper) {
-        switch (commandWrapper.getCommandCase()) {
-            case READ:
-                return processReadCommand(commandWrapper.getRead());
+            switch (commandWrapper.getCommandCase()) {
+                case READ:
+                    try (final Timer.Context timerCtx = readCommandTimer.time()) {
+                        return processReadCommand(commandWrapper.getRead());
+                    }
 
-            case WRITE:
-                return processWriteCommand(commandWrapper.getWrite());
+                case WRITE:
+                    try (final Timer.Context timerCtx = writeCommandTimer.time()) {
+                        return processWriteCommand(commandWrapper.getWrite());
+                    }
 
-            case DELETE:
-                return processDeleteCommand(commandWrapper.getDelete());
+                case DELETE:
+                    try (final Timer.Context timerCtx = deleteCommandTimer.time()) {
+                        return processDeleteCommand(commandWrapper.getDelete());
+                    }
 
-            case SEAL:
-                return processSealCommand(commandWrapper.getSeal());
+                case SEAL:
+                    try (final Timer.Context timerCtx = sealCommandTimer.time()) {
+                        return processSealCommand(commandWrapper.getSeal());
+                    }
+            }
+            assert false;
+            return null;
         }
-        assert false;
-        return null;
-    }
 
     private ReadCommandResult processReadCommand(final CommandWrapper.ReadCommand command) {
         final long logicalPageNumber = command.getPageNumber();
