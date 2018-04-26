@@ -10,7 +10,7 @@ plugins {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-mainClassName = 'corfu.storageunit.App'
+mainClassName = 'corfu.storageunit.StorageUnitApp'
 
 dependencies {
     compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
