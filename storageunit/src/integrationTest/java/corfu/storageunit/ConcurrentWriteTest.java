@@ -64,7 +64,7 @@ public class ConcurrentWriteTest {
         server.interrupt();
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 30000)
     public void test() throws Exception {
         // Pre-write and post-write barrier.
         final CyclicBarrier barrier = new CyclicBarrier(CONCURRENT_WRITERS + 1);
