@@ -11,10 +11,10 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 
-public class App {
+public class ServerApp {
     private static int PAGE_SIZE = 4096;
+    private static int PAGE_COUNT = 262144;
 
     public static void main(String[] args) throws IOException {
         final byte[] pageToWrite = createPageFromString("aaa");
@@ -25,7 +25,7 @@ public class App {
 
         try (final OutputStream os = socket.getOutputStream();
              final InputStream is = socket.getInputStream()) {
-            for (int i = 0; i < 4096; i++) {
+            for (int i = 0; i < PAGE_COUNT; i++) {
                 final CommandWrapper writeCommand =
                         CommandFactory.createWriteCommand(0, i, pageToWrite);
                 writeCommand.writeDelimitedTo(os);
